@@ -22,11 +22,11 @@ This project is an implementation of Qilin Chess' XiaSanZi.
 
 ### First Stage (Play Stage)
 - `Red Starts`.
-- Each player has 18 chess pieces and places them at the **intersection of the line segments**.
-- If one side has `3 chess pieces` arranged in a `straight line` (`vertical`, `horizontal` or `diagonal`) it can **`Press Down`** any chess piece of the other side (stacking a chess piece on top of any of the adversary's chess piece on board).
+- Each player has 18 chess pieces and `takes turns` placing them at the **intersection of the line segments**.
+- If one side has `3 chess pieces` arranged in a `straight line` (`vertical`, `horizontal` or `diagonal`) it can **`Press Down`** any chess piece of the other side. By pressing down means stacking a piece on top of any of the adversary's chess piece on board.
 - The pressed piece **DOES NOT BELONG** to any side, it can't form a straight line with any other chess piece.
 - **Stage end:**
-    - When all `24 positions` are `filled` the first stage ends and the pressed pieces are `removed` from the board.
+    - When all `24 positions` are `filled` the first stage ends and the pressed pieces (both of the stack) are `removed` from the board.
     - If there is `no pressed piece` on board, both sides take `1 piece out` from the board.
 
 ### Second Stage (Move Stage)
