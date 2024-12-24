@@ -1,7 +1,6 @@
 % display_game/1 - Displays the current game state
 display_game(game_state(Board, CurrentPlayer)) :-
     nl,
-    write('Current Player: '), write(CurrentPlayer), nl,
     write('   a       b        c       d       e        f       g   '), nl,
     nl,
     write('1  '), print_cell(Board, a1), write('------------------------'), print_cell(Board, d1), write('------------------------'), print_cell(Board, g1), nl,
@@ -29,7 +28,8 @@ display_game(game_state(Board, CurrentPlayer)) :-
     write('   |   +                    |                    +   |   '), nl,
     write('   | +                      |                      + |   '), nl,
     write('7  '), print_cell(Board, a7), write('------------------------'), print_cell(Board, d7), write('------------------------'), print_cell(Board, g7), nl, 
-    nl.
+    nl,
+    write('Current Player: '), write(CurrentPlayer), nl.
 
 % print_cell/2 - Helper predicate to print a cell's content
 print_cell(Board, Position) :-
@@ -39,5 +39,5 @@ print_cell(Board, Position) :-
         write('#')
     ; 
         Cell \= empty,
-        write(Cell)
+        put_code(Cell)
     ).

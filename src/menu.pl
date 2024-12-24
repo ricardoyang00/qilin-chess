@@ -36,9 +36,3 @@ display_menu :-
     write('2. Human vs Computer'), nl,
     write('0. EXIT'), nl,
     write('Choose an option: '), nl.
-
-% handle_option/1 - Handles the user's menu choice
-handle_option(1) :- start_game(red, black).
-handle_option(2) :- start_game(you, computer).
-handle_option(0) :- logo, fail.
-handle_option(_) :- write('Invalid option. Please try again.'), nl, display_menu.
