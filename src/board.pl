@@ -29,7 +29,12 @@ display_game(game_state(Board, CurrentPlayer, Pieces, Lines)) :-
     write('   | +                      |                      + |   '), nl,
     write('7  '), print_cell(Board, a7), write('------------------------'), print_cell(Board, d7), write('------------------------'), print_cell(Board, g7), nl, 
     nl,
-    write('Current Player: '), write(CurrentPlayer), nl.
+    print_current_player(CurrentPlayer).
+
+% Color macros
+color_red :- write('\e[31m').
+color_green :- write('\e[32m').
+color_reset :- write('\e[0m').
 
 % print_cell/2 - Helper predicate to print a cell's content
 print_cell(Board, Position) :-
@@ -39,12 +44,27 @@ print_cell(Board, Position) :-
         write('#')
     ; 
         Cell == red,
-        write('\e[31mR')    % Red color
+        color_red,
+        write('R')
     ;
         Cell == black,
-        write('\e[32mB')    % Green color
+        color_green,
+        write('B')
     ),
-    write('\e[0m').
+    color_reset.
+
+print_current_player(CurrentPlayer) :-
+    write('Current Player: '), 
+    (
+        CurrentPlayer == red,
+        color_red,
+        write('Red')
+    ;
+        CurrentPlayer == black,
+        color_green,
+        write('Black')
+    ),
+    color_reset, nl.
 
 % valid_position/1 - Verifies if the position input is valid
 valid_position(Position) :-

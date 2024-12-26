@@ -1,5 +1,6 @@
 :- consult('menu.pl').
 :- consult('board.pl').
+:- consult('utils.pl').
 
 forall(Condition, Action) :-
     \+ (Condition, \+ Action).
