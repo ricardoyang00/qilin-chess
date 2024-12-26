@@ -94,11 +94,11 @@ move(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Move, game
 update_board([], _, _, []).
 
 % red move
-update_board([Position-empty|Rest], Position, red, [Position-82|NewRest]) :-
+update_board([Position-empty|Rest], Position, red, [Position-red|NewRest]) :-
     update_board(Rest, Position, red, NewRest).
 
 % black move
-update_board([Position-empty|Rest], Position, black, [Position-66|NewRest]) :-
+update_board([Position-empty|Rest], Position, black, [Position-black|NewRest]) :-
     update_board(Rest, Position, black, NewRest).
 
 % no match, process the rest

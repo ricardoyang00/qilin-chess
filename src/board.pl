@@ -38,9 +38,13 @@ print_cell(Board, Position) :-
         Cell = empty,
         write('#')
     ; 
-        Cell \= empty,
-        put_code(Cell)
-    ).
+        Cell == red,
+        write('\e[31mR')    % Red color
+    ;
+        Cell == black,
+        write('\e[32mB')    % Green color
+    ),
+    write('\e[0m').
 
 % valid_position/1 - Verifies if the position input is valid
 valid_position(Position) :-
