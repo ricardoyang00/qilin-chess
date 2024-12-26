@@ -19,8 +19,8 @@ start_game(Player1, Player2) :-
     initial_state([Player1, Player2], GameState),
     game_loop(GameState).
 
-% initial_state/2 - Sets up the initial game state
-initial_state([Player1, Player2], game_state(Board, Player1)) :-
+% initial_state/2 - Sets up the initial game state with 18 pieces per player
+initial_state([Player1, Player2], game_state(Board, Player1, [18, 18], [])) :-
     % Initialize the board with empty positions
     Board = [
         a1-empty, d1-empty, g1-empty, 
@@ -32,18 +32,6 @@ initial_state([Player1, Player2], game_state(Board, Player1)) :-
         a7-empty, d7-empty, g7-empty
     ].
 
-% valid_position/1 - Verifies if the position input is valid
-valid_position(Position) :-
-    member(Position, [
-        a1, d1, g1, 
-        b2, d2, f2, 
-        c3, d3, e3, 
-        a4, b4, c4, e4, f4, g4, 
-        c5, d5, e5, 
-        b6, d6, f6, 
-        a7, d7, g7
-    ]).
-
 % game_loop/1 - Main game loop
 game_loop(GameState) :-
     display_game(GameState),
@@ -52,13 +40,13 @@ game_loop(GameState) :-
     write('Game over! Winner: '), write(Winner).
 
 game_loop(GameState) :-
-    GameState = game_state(_, CurrentPlayer),
-    choose_move(GameState, CurrentPlayer, Move),
+    GameState = game_state(Board, CurrentPlayer, Pieces, Lines),
+    choose_move(GameState, Move),
     move(GameState, Move, NewGameState),
     game_loop(NewGameState).
 
 % choose_move/3 - Chooses a move for the human player
-choose_move(game_state(Board, _), _, Move) :-
+choose_move(game_state(Board, _, _, _), Move) :-
     read_move(Board, Move).
 
 % valid_move/2 - Checks if a move is valid
@@ -79,7 +67,7 @@ read_move(Board, Move) :-
     read_move(Board, Move).
 
 % move/3 - Validates and executes a move
-move(game_state(Board, CurrentPlayer), Move, game_state(NewBoard, NextPlayer)) :-
+move(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Move, game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], NewLines)) :-
     update_board(Board, Move, CurrentPlayer, NewBoard),
     next_player(CurrentPlayer, NextPlayer).
 
