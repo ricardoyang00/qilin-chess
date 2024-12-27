@@ -126,16 +126,11 @@ check_lines_formed(Board, Player, ExistingLines, UpdatedLines) :-
 
 % all_in_line/3 - Checks if all positions in a line are occupied by the same player
 all_in_line(Board, [Pos1, Pos2, Pos3], Player) :-
-    player_code(Player, Code),
     write('Checking line: '), write([Pos1, Pos2, Pos3]), nl,
-    memberchk(Pos1-Code, Board),
-    memberchk(Pos2-Code, Board),
-    memberchk(Pos3-Code, Board),
+    memberchk(Pos1-Player, Board),
+    memberchk(Pos2-Player, Board),
+    memberchk(Pos3-Player, Board),
     !.
-
-% player_code/2 - Maps player to their respective board codes
-player_code(red, 82).  % 'R'
-player_code(black, 66).  % 'B'
 
 % next_player/2 - Switches to the next player
 next_player(red, black).
