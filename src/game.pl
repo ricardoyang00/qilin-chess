@@ -38,9 +38,9 @@ start_game(Player1, Player2) :-
 initial_state([Player1, Player2], game_state(Board, Player1, [14, 14], [])) :-
     % Initialize the board with empty positions
     Board = [
-        a1-red, d1-black, g1-empty, 
-        b2-empty, d2-black, f2-empty, 
-        c3-black, d3-empty, e3-black,
+        a1-red, d1-black, g1-black, 
+        b2-empty, d2-black, f2-black, 
+        c3-empty, d3-empty, e3-empty,
         a4-red, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
         c5-red, d5-empty, e5-empty,
         b6-red, d6-empty, f6-empty, 
@@ -58,17 +58,21 @@ game_loop(GameState) :-
 
 game_loop(GameState) :-
     choose_move(GameState, Move),
-    move(GameState, Move, GameStateAfterMove, AllowPress),
-    handle_press_down_move(GameStateAfterMove, AllowPress).
+    move(GameState, Move, GameStateAfterMove, AllowPressCount),
+    handle_press_down_move(GameStateAfterMove, AllowPressCount).
 
 % handle_press_down_move/2 - Handles whether to perform a press down move or continue the game loop
-handle_press_down_move(GameStateAfterMove, true) :-
+handle_press_down_move(GameStateAfterMove, AllowPressCount) :-
+    AllowPressCount > 0,
     display_game(GameStateAfterMove),
     display_board(GameStateAfterMove),
-    press_down(GameStateAfterMove, GameStateAfterPress),
-    game_loop(GameStateAfterPress).
+    write('Moves left to press down: '), write(AllowPressCount), nl,
+    press_down(GameStateAfterMove, GameStateAfterPress, AllowPressCount),
+    NewAllowPressCount is AllowPressCount - 1,
+    handle_press_down_move(GameStateAfterPress, NewAllowPressCount).
 
-handle_press_down_move(GameStateAfterMove, false) :-
+handle_press_down_move(GameStateAfterMove, 0) :-
+    % After all press down moves are handled, continue to the game loop
     game_loop(GameStateAfterMove).
 
 % choose_move/3 - Chooses a move for the human player
@@ -93,26 +97,26 @@ read_move(Board, Move) :-
     read_move(Board, Move).
 
 % move/3 - Validates and executes a move
-move(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Move, game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], NewLines), AllowPress) :-
+move(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Move, game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], NewLines), AllowPressCount) :-
     update_board(Board, Move, CurrentPlayer, NewBoard),
     decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
-    check_lines_formed(NewBoard, CurrentPlayer, Lines, UpdatedLines),
+    check_lines_formed(NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
     NewLines = UpdatedLines,
-    UpdatedLines \= Lines,
-    AllowPress = true,
+    AllowPressCount = NewLineCount,
+    AllowPressCount \= 0,
     NextPlayer = CurrentPlayer.
 
-move(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Move, game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], NewLines), AllowPress) :-
+move(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Move, game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], NewLines), AllowPressCount) :-
     update_board(Board, Move, CurrentPlayer, NewBoard),
     decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
-    check_lines_formed(NewBoard, CurrentPlayer, Lines, UpdatedLines),
+    check_lines_formed(NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
     NewLines = UpdatedLines,
-    UpdatedLines = Lines,
-    AllowPress = false,
+    AllowPressCount = NewLineCount,
+    AllowPressCount == 0,
     next_player(CurrentPlayer, NextPlayer).
 
 % press_down/3 - Allows the current player to press down an opponent's piece
-press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], Lines)) :-
+press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], Lines), AllowPressCount) :-
     write('You formed a line! Choose an opponent\'s piece to press down: '),
     read(PressMove),
     skip_line,
@@ -123,12 +127,17 @@ press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), game
     Opponent \= pressed,
     update_board(Board, PressMove, pressed, NewBoard),
     decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
-    next_player(CurrentPlayer, NextPlayer),
+    (   AllowPressCount = 1, % Switch player when count is 1 so when it enters game loop with all press down moves handled the game state has the next player stored, not 0 because this function won't be called
+        next_player(CurrentPlayer, NextPlayer)
+    ; 
+        AllowPressCount \= 1,
+        NextPlayer = CurrentPlayer
+    ),
     !.
 
-press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Result) :-
+press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), SameGameState, AllowPressCount) :-
     write('Invalid press down move. Please try again.'), nl,
-    press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Result).
+    press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), SameGameState, AllowPressCount).
 
 % update_board/4 - Updates the board with the player's move
 update_board([], _, _, []).
@@ -159,7 +168,7 @@ decrement_piece_count(black, RedCount, BlackCount, NewRedCount, NewBlackCount) :
     NewRedCount = RedCount.
 
 % check_lines_formed/4 - Finds newly formed lines and updates the Lines list
-check_lines_formed(Board, Player, ExistingLines, UpdatedLines) :-
+check_lines_formed(Board, Player, ExistingLines, UpdatedLines, NewLineCount) :-
     straight_lines(AllPossibleLines),
     findall(Line, (
         member(Line, AllPossibleLines),     % Select a possible straight line.
@@ -174,6 +183,8 @@ check_lines_formed(Board, Player, ExistingLines, UpdatedLines) :-
         write('No new lines formed by '), write(Player), nl
     ),
 
+    length(NewLines, NewLineCount),         % Count how many new lines were formed
+    write('NewLineCount: '), write(NewLineCount), nl,
     append(ExistingLines, NewLines, UpdatedLines).
 
 % all_in_line/3 - Checks if all positions in a line are occupied by the same player
