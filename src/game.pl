@@ -6,10 +6,13 @@ forall(Condition, Action) :-
     \+ (Condition, \+ Action).
 
 % Debug function to see board.
-display_board(Board) :-
+display_board(game_state(Board, _, [RedCount, BlackCount], _)) :-
     write('Current Board State: '),
-    forall(member(Pos-Code, Board), (write(Pos), write('-'), write(Code), write(', '))),
-    nl, nl.
+    forall(member(Pos-Cell, Board), (write(Pos), write('-'), write(Cell), write(', '))),
+    nl,
+    write('Pieces left: '), nl,
+    write('Red: '), write(RedCount), nl,
+    write('Black: '), write(BlackCount), nl, nl.
 
 
 % play/0 - Main predicate to start the game and display the menu
@@ -31,7 +34,8 @@ start_game(Player1, Player2) :-
     game_loop(GameState).
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
-initial_state([Player1, Player2], game_state(Board, Player1, [18, 18], [])) :-
+% Initial state changed for debugging issues
+initial_state([Player1, Player2], game_state(Board, Player1, [16, 16], [])) :-
     % Initialize the board with empty positions
     Board = [
         a1-red, d1-black, g1-empty, 
@@ -47,7 +51,7 @@ initial_state([Player1, Player2], game_state(Board, Player1, [18, 18], [])) :-
 game_loop(GameState) :-
     GameState = game_state(Board, CurrentPlayer, Pieces, Lines),
     display_game(GameState),
-    display_board(Board),
+    display_board(GameState),
     game_over(GameState, Winner),
     !,
     write('Game over! Winner: '), write(Winner).
@@ -55,15 +59,17 @@ game_loop(GameState) :-
 game_loop(GameState) :-
     choose_move(GameState, Move),
     move(GameState, Move, GameStateAfterMove, AllowPress),
+    handle_press_down_move(GameStateAfterMove, AllowPress).
+
+% handle_press_down_move/2 - Handles whether to perform a press down move or continue the game loop
+handle_press_down_move(GameStateAfterMove, true) :-
     display_game(GameStateAfterMove),
-    (
-        AllowPress = true ->
-        press_down(GameStateAfterMove, GameStateAfterPress),
-        AllowPress = false,
-        game_loop(GameStateAfterPress)
-    ;
-        game_loop(GameStateAfterMove)
-    ).
+    display_board(GameStateAfterMove),
+    press_down(GameStateAfterMove, GameStateAfterPress),
+    game_loop(GameStateAfterPress).
+
+handle_press_down_move(GameStateAfterMove, false) :-
+    game_loop(GameStateAfterMove).
 
 % choose_move/3 - Chooses a move for the human player
 choose_move(game_state(Board, _, _, _), Move) :-
@@ -92,15 +98,18 @@ move(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Move, game
     decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
     check_lines_formed(NewBoard, CurrentPlayer, Lines, UpdatedLines),
     NewLines = UpdatedLines,
-    (
-        % If a new line is formed, allow the current player to press down an opponent's piece
-        UpdatedLines \= Lines ->
-        AllowPress = true,
-        NextPlayer = CurrentPlayer
-    ;
-        AllowPress = false,
-        next_player(CurrentPlayer, NextPlayer)
-    ).
+    UpdatedLines \= Lines,
+    AllowPress = true,
+    NextPlayer = CurrentPlayer.
+
+move(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Move, game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], NewLines), AllowPress) :-
+    update_board(Board, Move, CurrentPlayer, NewBoard),
+    decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
+    check_lines_formed(NewBoard, CurrentPlayer, Lines, UpdatedLines),
+    NewLines = UpdatedLines,
+    UpdatedLines = Lines,
+    AllowPress = false,
+    next_player(CurrentPlayer, NextPlayer).
 
 % press_down/3 - Allows the current player to press down an opponent's piece
 press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], Lines)) :-
@@ -113,12 +122,13 @@ press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), game
     Opponent \= empty,
     Opponent \= pressed,
     update_board(Board, PressMove, pressed, NewBoard),
+    decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
     next_player(CurrentPlayer, NextPlayer),
     !.
 
-press_down(Board, _, Board) :-
+press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Result) :-
     write('Invalid press down move. Please try again.'), nl,
-    fail.
+    press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Result).
 
 % update_board/4 - Updates the board with the player's move
 update_board([], _, _, []).
