@@ -50,6 +50,9 @@ print_cell(Board, Position) :-
         Cell == black,
         color_green,
         write('B')
+    ;
+        Cell == pressed,
+        write('P')
     ),
     color_reset.
 

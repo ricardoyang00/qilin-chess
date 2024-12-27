@@ -34,10 +34,10 @@ start_game(Player1, Player2) :-
 initial_state([Player1, Player2], game_state(Board, Player1, [18, 18], [])) :-
     % Initialize the board with empty positions
     Board = [
-        a1-empty, d1-empty, g1-empty, 
-        b2-empty, d2-empty, f2-empty, 
+        a1-red, d1-black, g1-empty, 
+        b2-empty, d2-black, f2-empty, 
         c3-empty, d3-empty, e3-empty,
-        a4-empty, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
+        a4-red, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
         c5-empty, d5-empty, e5-empty,
         b6-empty, d6-empty, f6-empty, 
         a7-empty, d7-empty, g7-empty
@@ -54,8 +54,16 @@ game_loop(GameState) :-
 
 game_loop(GameState) :-
     choose_move(GameState, Move),
-    move(GameState, Move, NewGameState),
-    game_loop(NewGameState).
+    move(GameState, Move, GameStateAfterMove, AllowPress),
+    display_game(GameStateAfterMove),
+    (
+        AllowPress = true ->
+        press_down(GameStateAfterMove, GameStateAfterPress),
+        AllowPress = false,
+        game_loop(GameStateAfterPress)
+    ;
+        game_loop(GameStateAfterMove)
+    ).
 
 % choose_move/3 - Chooses a move for the human player
 choose_move(game_state(Board, _, _, _), Move) :-
@@ -79,17 +87,38 @@ read_move(Board, Move) :-
     read_move(Board, Move).
 
 % move/3 - Validates and executes a move
-move(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Move, game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], NewLines)) :-
+move(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Move, game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], NewLines), AllowPress) :-
     update_board(Board, Move, CurrentPlayer, NewBoard),
+    decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
     check_lines_formed(NewBoard, CurrentPlayer, Lines, UpdatedLines),
-    ( 
-        CurrentPlayer = red, NewRedCount is RedCount - 1, NewBlackCount = BlackCount 
-    ; 
-        CurrentPlayer = black, NewBlackCount is BlackCount - 1, NewRedCount = RedCount 
-    ),
-
     NewLines = UpdatedLines,
-    next_player(CurrentPlayer, NextPlayer).
+    (
+        % If a new line is formed, allow the current player to press down an opponent's piece
+        UpdatedLines \= Lines ->
+        AllowPress = true,
+        NextPlayer = CurrentPlayer
+    ;
+        AllowPress = false,
+        next_player(CurrentPlayer, NextPlayer)
+    ).
+
+% press_down/3 - Allows the current player to press down an opponent's piece
+press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], Lines)) :-
+    write('You formed a line! Choose an opponent\'s piece to press down: '),
+    read(PressMove),
+    skip_line,
+    valid_position(PressMove),
+    memberchk(PressMove-Opponent, Board),
+    Opponent \= CurrentPlayer,
+    Opponent \= empty,
+    Opponent \= pressed,
+    update_board(Board, PressMove, pressed, NewBoard),
+    next_player(CurrentPlayer, NextPlayer),
+    !.
+
+press_down(Board, _, Board) :-
+    write('Invalid press down move. Please try again.'), nl,
+    fail.
 
 % update_board/4 - Updates the board with the player's move
 update_board([], _, _, []).
@@ -102,9 +131,22 @@ update_board([Position-empty|Rest], Position, red, [Position-red|NewRest]) :-
 update_board([Position-empty|Rest], Position, black, [Position-black|NewRest]) :-
     update_board(Rest, Position, black, NewRest).
 
+% presse down move
+update_board([Position-_|Rest], Position, pressed, [Position-pressed|NewRest]) :-
+    update_board(Rest, Position, pressed, NewRest).
+
 % no match, process the rest
 update_board([Other|Rest], Position, Player, [Other|NewRest]) :-
     update_board(Rest, Position, Player, NewRest).
+
+% decrement_piece_count/4 - Decrements the piece count for the current player
+decrement_piece_count(red, RedCount, BlackCount, NewRedCount, NewBlackCount) :-
+    NewRedCount is RedCount - 1,
+    NewBlackCount = BlackCount.
+
+decrement_piece_count(black, RedCount, BlackCount, NewRedCount, NewBlackCount) :-
+    NewBlackCount is BlackCount - 1,
+    NewRedCount = RedCount.
 
 % check_lines_formed/4 - Finds newly formed lines and updates the Lines list
 check_lines_formed(Board, Player, ExistingLines, UpdatedLines) :-
@@ -126,7 +168,6 @@ check_lines_formed(Board, Player, ExistingLines, UpdatedLines) :-
 
 % all_in_line/3 - Checks if all positions in a line are occupied by the same player
 all_in_line(Board, [Pos1, Pos2, Pos3], Player) :-
-    write('Checking line: '), write([Pos1, Pos2, Pos3]), nl,
     memberchk(Pos1-Player, Board),
     memberchk(Pos2-Player, Board),
     memberchk(Pos3-Player, Board),
