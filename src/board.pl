@@ -95,5 +95,5 @@ straight_lines([
 
     % Diagonal
     [a1, b2, c3], [g1, f2, e3],
-    [a4, b6, e5], [g7, f6, e5]
+    [a7, b6, c5], [g7, f6, e5]
 ]).

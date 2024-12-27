@@ -35,15 +35,15 @@ start_game(Player1, Player2) :-
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1, Player2], game_state(Board, Player1, [16, 16], [])) :-
+initial_state([Player1, Player2], game_state(Board, Player1, [14, 14], [])) :-
     % Initialize the board with empty positions
     Board = [
         a1-red, d1-black, g1-empty, 
         b2-empty, d2-black, f2-empty, 
-        c3-empty, d3-empty, e3-empty,
+        c3-black, d3-empty, e3-black,
         a4-red, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
-        c5-empty, d5-empty, e5-empty,
-        b6-empty, d6-empty, f6-empty, 
+        c5-red, d5-empty, e5-empty,
+        b6-red, d6-empty, f6-empty, 
         a7-empty, d7-empty, g7-empty
     ].
 
