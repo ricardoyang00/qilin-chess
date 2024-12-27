@@ -200,5 +200,5 @@ next_player(black, red).
 
 % temporary game over as board filled
 % game_over/2 - Checks if the game is over and identifies the winner
-game_over(game_state(Board, _), testgameover) :-
+game_over(game_state(Board, _, _, _), testgameover) :-
     \+ memberchk(_-empty, Board).
