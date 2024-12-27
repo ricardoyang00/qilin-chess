@@ -25,6 +25,7 @@ play :-
 % handle_option/1 - Handles the user's menu choice
 handle_option(1) :- start_game(red, black).
 handle_option(2) :- write('Human vs Computer mode is not implemented yet.'), nl, play.
+handle_option(3) :- display_rules.
 handle_option(0) :- write('Exiting the game.'), nl, !.
 handle_option(_) :- write('Invalid option. Please try again.'), nl, play.
 

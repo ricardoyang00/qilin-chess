@@ -1,3 +1,5 @@
+:- consult('utils.pl').
+
 % display_game/1 - Displays the current game state
 display_game(game_state(Board, CurrentPlayer, Pieces, Lines)) :-
     nl,
@@ -31,11 +33,6 @@ display_game(game_state(Board, CurrentPlayer, Pieces, Lines)) :-
     nl,
     print_current_player(CurrentPlayer).
 
-% Color macros
-color_red :- write('\e[31m').
-color_green :- write('\e[32m').
-color_reset :- write('\e[0m').
-
 % print_cell/2 - Helper predicate to print a cell's content
 print_cell(Board, Position) :-
     memberchk(Position-Cell, Board),
@@ -44,30 +41,24 @@ print_cell(Board, Position) :-
         write('#')
     ; 
         Cell == red,
-        color_red,
-        write('R')
+        write_colored_text(red, 'R')
     ;
         Cell == black,
-        color_green,
-        write('B')
+        write_colored_text(green, 'B')
     ;
         Cell == pressed,
-        write('P')
-    ),
-    color_reset.
+        write_colored_text(magenta, 'P')
+    ).
 
 print_current_player(CurrentPlayer) :-
     write('Current Player: '), 
     (
         CurrentPlayer == red,
-        color_red,
-        write('Red')
+        write_colored_text(red, 'Red')
     ;
         CurrentPlayer == black,
-        color_green,
-        write('Black')
-    ),
-    color_reset, nl.
+        write_colored_text(green, 'Black')
+    ), nl.
 
 % valid_position/1 - Verifies if the position input is valid
 valid_position(Position) :-
