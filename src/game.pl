@@ -6,7 +6,7 @@ forall(Condition, Action) :-
     \+ (Condition, \+ Action).
 
 % Debug function to see board.
-display_board(game_state(Board, _, [RedCount, BlackCount], _)) :-
+display_board(game_state(Board, _, [RedCount, BlackCount], _, _)) :-
     write('Current Board State: '),
     % forall(member(Pos-Cell, Board), (write(Pos), write('-'), write(Cell), write(', '))),
     nl,
@@ -36,7 +36,7 @@ start_game(Player1, Player2) :-
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1, Player2], game_state(Board, Player1, [7, 7], [])) :-
+initial_state([Player1, Player2], game_state(Board, Player1, [7, 7], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
         a1-red, d1-red, g1-black, 
@@ -50,7 +50,7 @@ initial_state([Player1, Player2], game_state(Board, Player1, [7, 7], [])) :-
 
 % first_stage_loop/1 - Main game loop
 first_stage_loop(GameState) :-
-    GameState = game_state(Board, CurrentPlayer, Pieces, Lines),
+    GameState = game_state(Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
     display_game(GameState),
     display_board(GameState),
     first_stage_over(GameState, Transition),
@@ -59,25 +59,28 @@ first_stage_loop(GameState) :-
 
 first_stage_loop(GameState) :-
     choose_move(GameState, Move),
-    move(GameState, Move, GameStateAfterMove, AllowPressCount),
-    handle_press_down_move(GameStateAfterMove, AllowPressCount).
+    move(GameState, Move, GameStateAfterMove),
+    handle_press_down_move(GameStateAfterMove).
 
-% handle_press_down_move/2 - Handles whether to perform a press down move or continue the game loop
-handle_press_down_move(GameStateAfterMove, AllowPressCount) :-
+% handle_press_down_move/1 - Handles whether to perform a press down move or continue the game loop
+handle_press_down_move(GameStateAfterMove) :-
+    GameStateAfterMove = game_state(Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
     AllowPressCount > 0,
     display_game(GameStateAfterMove),
     display_board(GameStateAfterMove),
     write('Moves left to press down: '), write(AllowPressCount), nl,
-    press_down(GameStateAfterMove, GameStateAfterPress, AllowPressCount),
-    NewAllowPressCount is AllowPressCount - 1,
-    handle_press_down_move(GameStateAfterPress, NewAllowPressCount).
+    press_down(GameStateAfterMove, GameStateAfterPress),
+    handle_press_down_move(GameStateAfterPress).
 
-handle_press_down_move(GameStateAfterMove, 0) :-
-    % After all press down moves are handled, continue to the game loop
-    first_stage_loop(GameStateAfterMove).
+handle_press_down_move(GameStateAfterMove) :-
+    GameStateAfterMove = game_state(Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
+    AllowPressCount == 0,
+    next_player(CurrentPlayer, NextPlayer),
+    NewGameState = game_state(Board, NextPlayer, Pieces, Lines, 0),
+    first_stage_loop(NewGameState).
 
-% choose_move/3 - Chooses a move for the human player
-choose_move(game_state(Board, _, _, _), Move) :-
+% choose_move/2 - Chooses a move for the human player
+choose_move(game_state(Board, _, _, _, _), Move) :-
     read_move(Board, Move).
 
 % valid_move/2 - Checks if a move is valid
@@ -98,26 +101,16 @@ read_move(Board, Move) :-
     read_move(Board, Move).
 
 % move/3 - Validates and executes a move
-move(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Move, game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], NewLines), AllowPressCount) :-
+move(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), Move, game_state(NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], NewLines, NewAllowPressCount)) :-
     update_board(Board, Move, CurrentPlayer, NewBoard),
     decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
     check_lines_formed(NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
     NewLines = UpdatedLines,
-    AllowPressCount = NewLineCount,
-    AllowPressCount \= 0,
-    NextPlayer = CurrentPlayer.
-
-move(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Move, game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], NewLines), AllowPressCount) :-
-    update_board(Board, Move, CurrentPlayer, NewBoard),
-    decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
-    check_lines_formed(NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
-    NewLines = UpdatedLines,
-    AllowPressCount = NewLineCount,
-    AllowPressCount == 0,
-    next_player(CurrentPlayer, NextPlayer).
+    NewAllowPressCount = NewLineCount,
+    !.
 
 % press_down/3 - Allows the current player to press down an opponent's piece
-press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), game_state(NewBoard, NextPlayer, [NewRedCount, NewBlackCount], Lines), AllowPressCount) :-
+press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), game_state(NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], Lines, NewAllowPressCount)) :-
     write('You formed a line! Choose an opponent\'s piece to press down: '),
     read(PressMove),
     skip_line,
@@ -128,18 +121,12 @@ press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), game
     Opponent \= pressed,
     update_board(Board, PressMove, pressed, NewBoard),
     decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
-    (   
-        AllowPressCount = 1, % Switch player when count is 1 so when it enters game loop with all press down moves handled the game state has the next player stored, not 0 because this function won't be called
-        next_player(CurrentPlayer, NextPlayer)
-    ; 
-        AllowPressCount \= 1,
-        NextPlayer = CurrentPlayer
-    ),
+    NewAllowPressCount is AllowPressCount - 1,
     !.
 
-press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), SameGameState, AllowPressCount) :-
+press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), SameGameState) :-
     write('Invalid press down move. Please try again.'), nl,
-    press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), SameGameState, AllowPressCount).
+    press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), SameGameState).
 
 % update_board/4 - Updates the board with the player's move or maintains the state if no update
 update_board([], _, _, []). % Base case: empty board
@@ -179,7 +166,8 @@ check_lines_formed(Board, Player, ExistingLines, UpdatedLines, NewLineCount) :-
 
     length(NewLines, NewLineCount),         % Count how many new lines were formed
     write('NewLineCount: '), write(NewLineCount), nl,
-    append(ExistingLines, NewLines, UpdatedLines).
+    append(ExistingLines, NewLines, UpdatedLines),
+    !.
 
 % all_in_line/3 - Checks if all positions in a line are occupied by the same player
 all_in_line(Board, [Pos1, Pos2, Pos3], Player) :-
@@ -193,7 +181,7 @@ next_player(red, black).
 next_player(black, red).
 
 % first_stage_over/2 - Checks if the stage 1 is over and identifies the winner
-first_stage_over(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), second_stage_loop(NewGameState)) :-
+first_stage_over(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), second_stage_loop(NewGameState)) :-
     \+ memberchk(_-empty, Board),
     write('Play Stage complete. Transitioning game to Move Stage.'), nl,
     
@@ -205,7 +193,7 @@ first_stage_over(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines)
         PressedFound = false,
         write('No pressed pieces. Each side will remove one piece.'), nl,
         choose_piece_to_remove(Board, red, BoardAfterRedRemoval),
-        display_game(game_state(BoardAfterRedRemoval, black, [RedCount, BlackCount], Lines)),
+        display_game(game_state(BoardAfterRedRemoval, black, [RedCount, BlackCount], Lines, AllowPressCount)),
         choose_piece_to_remove(BoardAfterRedRemoval, black, FinalBoard),
         count_pieces(BoardAfterRedRemoval, red, NewRedCount),
         count_pieces(FinalBoard, black, NewBlackCount)
@@ -219,7 +207,8 @@ first_stage_over(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines)
     ),
 
     % Prepare the game state for the second stage
-    NewGameState = game_state(FinalBoard, CurrentPlayer, [NewRedCount, NewBlackCount], []).
+    next_player(CurrentPlayer, NextPlayer),
+    NewGameState = game_state(FinalBoard, NextPlayer, [NewRedCount, NewBlackCount], [], 0).
 
 % remove_all_pressed/3 - Recursively replaces pressed pieces with empty
 remove_all_pressed([], [], false). % Base case: empty board, no pressed pieces found

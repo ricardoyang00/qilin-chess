@@ -1,7 +1,7 @@
 :- consult('utils.pl').
 
 % display_game/1 - Displays the current game state
-display_game(game_state(Board, CurrentPlayer, Pieces, Lines)) :-
+display_game(game_state(Board, CurrentPlayer, Pieces, Lines, AllowPressCount)) :-
     nl,
     write('   a       b        c       d       e        f       g   '), nl,
     nl,
