@@ -8,7 +8,7 @@ forall(Condition, Action) :-
 % Debug function to see board.
 display_board(game_state(Board, _, [RedCount, BlackCount], _)) :-
     write('Current Board State: '),
-    forall(member(Pos-Cell, Board), (write(Pos), write('-'), write(Cell), write(', '))),
+    % forall(member(Pos-Cell, Board), (write(Pos), write('-'), write(Cell), write(', '))),
     nl,
     write('Pieces left: '), nl,
     write('Red: '), write(RedCount), nl,
@@ -32,32 +32,32 @@ handle_option(_) :- write('Invalid option. Please try again.'), nl, play.
 % start_game/2 - Starts the game with the given player types
 start_game(Player1, Player2) :-
     initial_state([Player1, Player2], GameState),
-    game_loop(GameState).
+    first_stage_loop(GameState).
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1, Player2], game_state(Board, Player1, [14, 14], [])) :-
+initial_state([Player1, Player2], game_state(Board, Player1, [7, 7], [])) :-
     % Initialize the board with empty positions
     Board = [
-        a1-red, d1-black, g1-black, 
-        b2-empty, d2-black, f2-black, 
-        c3-empty, d3-empty, e3-empty,
-        a4-red, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
-        c5-red, d5-empty, e5-empty,
-        b6-red, d6-empty, f6-empty, 
-        a7-empty, d7-empty, g7-empty
+        a1-red, d1-red, g1-black, 
+        b2-black, d2-black, f2-red, 
+        c3-red, d3-black, e3-empty,
+        a4-black, b4-red, c4-black, e4-red, f4-black, g4-red, 
+        c5-red, d5-black, e5-red,
+        b6-black, d6-empty, f6-red, 
+        a7-black, d7-red, g7-black
     ].
 
-% game_loop/1 - Main game loop
-game_loop(GameState) :-
+% first_stage_loop/1 - Main game loop
+first_stage_loop(GameState) :-
     GameState = game_state(Board, CurrentPlayer, Pieces, Lines),
     display_game(GameState),
     display_board(GameState),
-    game_over(GameState, Winner),
+    first_stage_over(GameState, Transition),
     !,
-    write('Game over! Winner: '), write(Winner).
+    Transition.
 
-game_loop(GameState) :-
+first_stage_loop(GameState) :-
     choose_move(GameState, Move),
     move(GameState, Move, GameStateAfterMove, AllowPressCount),
     handle_press_down_move(GameStateAfterMove, AllowPressCount).
@@ -74,7 +74,7 @@ handle_press_down_move(GameStateAfterMove, AllowPressCount) :-
 
 handle_press_down_move(GameStateAfterMove, 0) :-
     % After all press down moves are handled, continue to the game loop
-    game_loop(GameStateAfterMove).
+    first_stage_loop(GameStateAfterMove).
 
 % choose_move/3 - Chooses a move for the human player
 choose_move(game_state(Board, _, _, _), Move) :-
@@ -128,7 +128,8 @@ press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), game
     Opponent \= pressed,
     update_board(Board, PressMove, pressed, NewBoard),
     decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
-    (   AllowPressCount = 1, % Switch player when count is 1 so when it enters game loop with all press down moves handled the game state has the next player stored, not 0 because this function won't be called
+    (   
+        AllowPressCount = 1, % Switch player when count is 1 so when it enters game loop with all press down moves handled the game state has the next player stored, not 0 because this function won't be called
         next_player(CurrentPlayer, NextPlayer)
     ; 
         AllowPressCount \= 1,
@@ -140,24 +141,16 @@ press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), Same
     write('Invalid press down move. Please try again.'), nl,
     press_down(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), SameGameState, AllowPressCount).
 
-% update_board/4 - Updates the board with the player's move
-update_board([], _, _, []).
+% update_board/4 - Updates the board with the player's move or maintains the state if no update
+update_board([], _, _, []). % Base case: empty board
 
-% red move
-update_board([Position-empty|Rest], Position, red, [Position-red|NewRest]) :-
-    update_board(Rest, Position, red, NewRest).
+% Matching position, update to the new state
+update_board([Position-_|Rest], Position, NewState, [Position-NewState|NewRest]) :-
+    update_board(Rest, Position, NewState, NewRest).
 
-% black move
-update_board([Position-empty|Rest], Position, black, [Position-black|NewRest]) :-
-    update_board(Rest, Position, black, NewRest).
-
-% presse down move
-update_board([Position-_|Rest], Position, pressed, [Position-pressed|NewRest]) :-
-    update_board(Rest, Position, pressed, NewRest).
-
-% no match, process the rest
-update_board([Other|Rest], Position, Player, [Other|NewRest]) :-
-    update_board(Rest, Position, Player, NewRest).
+% No match, keep the current state and process the rest
+update_board([Other|Rest], Position, NewState, [Other|NewRest]) :-
+    update_board(Rest, Position, NewState, NewRest).
 
 % decrement_piece_count/4 - Decrements the piece count for the current player
 decrement_piece_count(red, RedCount, BlackCount, NewRedCount, NewBlackCount) :-
@@ -199,7 +192,73 @@ all_in_line(Board, [Pos1, Pos2, Pos3], Player) :-
 next_player(red, black).
 next_player(black, red).
 
-% temporary game over as board filled
-% game_over/2 - Checks if the game is over and identifies the winner
-game_over(game_state(Board, _, _, _), testgameover) :-
-    \+ memberchk(_-empty, Board).
+% first_stage_over/2 - Checks if the stage 1 is over and identifies the winner
+first_stage_over(game_state(Board, CurrentPlayer, [RedCount, BlackCount], Lines), second_stage_loop(NewGameState)) :-
+    \+ memberchk(_-empty, Board),
+    write('Play Stage complete. Transitioning game to Move Stage.'), nl,
+    
+    % Replace pressed pieces with empty ones using recursion
+    remove_all_pressed(Board, BoardWithoutPressed, PressedFound),
+
+    (   
+        % Case 1: No pressed pieces found, allow each player to remove one piece
+        PressedFound = false,
+        write('No pressed pieces. Each side will remove one piece.'), nl,
+        choose_piece_to_remove(Board, red, BoardAfterRedRemoval),
+        display_game(game_state(BoardAfterRedRemoval, black, [RedCount, BlackCount], Lines)),
+        choose_piece_to_remove(BoardAfterRedRemoval, black, FinalBoard),
+        count_pieces(BoardAfterRedRemoval, red, NewRedCount),
+        count_pieces(FinalBoard, black, NewBlackCount)
+    ;   
+        % Case 2: Pressed pieces found, update the board and counts
+        PressedFound = true,
+        write('Removing pressed pieces...'), nl,
+        FinalBoard = BoardWithoutPressed,
+        count_pieces(BoardWithoutPressed, red, NewRedCount),
+        count_pieces(BoardWithoutPressed, black, NewBlackCount)
+    ),
+
+    % Prepare the game state for the second stage
+    NewGameState = game_state(FinalBoard, CurrentPlayer, [NewRedCount, NewBlackCount], []).
+
+% remove_all_pressed/3 - Recursively replaces pressed pieces with empty
+remove_all_pressed([], [], false). % Base case: empty board, no pressed pieces found
+
+remove_all_pressed([Position-pressed | Rest], [Position-empty | NewRest], true) :-
+    remove_all_pressed(Rest, NewRest, _). % At least one pressed piece was found
+
+remove_all_pressed([Other | Rest], [Other | NewRest], PressedFound) :-
+    remove_all_pressed(Rest, NewRest, PressedFound).
+
+% choose_piece_to_remove/3 - Allows a player to choose one piece to remove
+choose_piece_to_remove(Board, Player, NewBoard) :-
+    write(Player), write(', choose a piece to remove (e.g., a1): '), nl,
+    read(Position),
+    skip_line,
+    valid_removal(Board, Position, Player),
+    update_board(Board, Position, empty, NewBoard).
+
+choose_piece_to_remove(Board, Player, NewBoard) :-
+    write('Invalid choice. Please try again.'), nl,
+    choose_piece_to_remove(Board, Player, NewBoard).
+
+% valid_removal/3 - Checks if the chosen piece can be removed
+valid_removal(Board, Position, Player) :-
+    memberchk(Position-Player, Board).
+
+% count_pieces/3 - Recursively counts the number of pieces of a given player on the board
+count_pieces([], _, 0). % Base case: empty board, count is 0
+
+count_pieces([_-Player | Rest], Player, Count) :-
+    count_pieces(Rest, Player, RestCount),
+    Count is RestCount + 1.
+
+count_pieces([_ | Rest], Player, Count) :-
+    count_pieces(Rest, Player, Count).
+
+% second_stage_loop/1 - Placeholder for the second stage game loop
+second_stage_loop(GameState) :-
+    write('Entering the second stage (test loop).'), nl,
+    write('Game state: '), write(GameState), nl,
+    display_game(GameState),
+    display_board(GameState).
