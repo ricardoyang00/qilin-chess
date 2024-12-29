@@ -136,3 +136,18 @@ initial_state([Player1, Player2], game_state(second_stage, Board, Player2, [11, 
         b6-black, d6-red, f6-red, 
         a7-black, d7-red, g7-black
     ].
+
+GAME OVER WINNER BLACK 
+% initial_state/2 - Sets up the initial game state with 18 pieces per player
+% Initial state changed for debugging issues
+initial_state([Player1, Player2], game_state(second_stage, Board, Player2, [1, 3], [], 0)) :-
+    % Initialize the board with empty positions
+    Board = [
+        a1-empty, d1-empty, g1-empty, 
+        b2-black, d2-empty, f2-red, 
+        c3-empty, d3-empty, e3-empty,
+        a4-black, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
+        c5-empty, d5-empty, e5-empty,
+        b6-empty, d6-empty, f6-empty, 
+        a7-black, d7-empty, g7-empty
+    ].

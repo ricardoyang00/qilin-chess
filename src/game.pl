@@ -345,7 +345,7 @@ remove(game_state(second_stage, Board, CurrentPlayer, [RedCount, BlackCount], Li
     remove(game_state(second_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowRemoveCount), SameGameState).
 
 % game_over/2 - Checks if the game is over and identifies the winner
-game_over(game_state(_, _, _, [RedCount, _], _), black) :-
-    RedCount =:= 0.
-game_over(game_state(_, _, _, [_, BlackCount], _), red) :-
-    BlackCount =:= 0.
+game_over(game_state(_, _, _, [RedCount, _], _, _), black) :-
+    RedCount = 0.
+game_over(game_state(_, _, _, [_, BlackCount], _, _), red) :-
+    BlackCount = 0.
