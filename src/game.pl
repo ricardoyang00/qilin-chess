@@ -31,20 +31,20 @@ handle_option(_) :- write('Invalid option. Please try again.'), nl, play.
 % start_game/2 - Starts the game with the given player types
 start_game(Player1, Player2) :-
     initial_state([Player1, Player2], GameState),
-    second_stage_loop(GameState).
+    first_stage_loop(GameState).
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1, Player2], game_state(second_stage, Board, Player2, [4, 5], [], 0)) :-
+initial_state([Player1, Player2], game_state(first_stage, Board, Player1, [7, 7], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
-        a1-empty, d1-black, g1-red, 
+        a1-red, d1-red, g1-black, 
         b2-black, d2-black, f2-red, 
-        c3-empty, d3-empty, e3-empty,
-        a4-black, b4-empty, c4-empty, e4-empty, f4-red, g4-empty, 
-        c5-empty, d5-empty, e5-empty,
-        b6-empty, d6-empty, f6-empty, 
-        a7-black, d7-empty, g7-red
+        c3-red, d3-black, e3-empty,
+        a4-black, b4-red, c4-black, e4-red, f4-black, g4-red, 
+        c5-red, d5-black, e5-red,
+        b6-black, d6-empty, f6-red, 
+        a7-black, d7-red, g7-black
     ].
 
 % first_stage_loop/1 - First stage loop of the game
