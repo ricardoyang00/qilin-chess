@@ -31,20 +31,20 @@ handle_option(_) :- write('Invalid option. Please try again.'), nl, play.
 % start_game/2 - Starts the game with the given player types
 start_game(Player1, Player2) :-
     initial_state([Player1, Player2], GameState),
-    first_stage_loop(GameState).
+    second_stage_loop(GameState).
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1, Player2], game_state(first_stage, Board, Player1, [7, 7], [], 0)) :-
+initial_state([Player1, Player2], game_state(second_stage, Board, Player2, [4, 5], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
-        a1-red, d1-red, g1-black, 
+        a1-empty, d1-black, g1-red, 
         b2-black, d2-black, f2-red, 
-        c3-red, d3-black, e3-empty,
-        a4-black, b4-red, c4-black, e4-red, f4-black, g4-red, 
-        c5-red, d5-black, e5-red,
-        b6-black, d6-empty, f6-red, 
-        a7-black, d7-red, g7-black
+        c3-empty, d3-empty, e3-empty,
+        a4-black, b4-empty, c4-empty, e4-empty, f4-red, g4-empty, 
+        c5-empty, d5-empty, e5-empty,
+        b6-empty, d6-empty, f6-empty, 
+        a7-black, d7-empty, g7-red
     ].
 
 % first_stage_loop/1 - First stage loop of the game
@@ -307,24 +307,25 @@ second_stage_loop(GameState) :-
 second_stage_loop(GameState) :-
     choose_move(GameState, Move),
     move(GameState, Move, GameStateAfterMove),
-    handle_remove_move(GameStateAfterMove).
+    handle_remove_move(GameStateAfterMove, GameStateAfterRemove),
+    update_lines(GameStateAfterRemove, GameStateAfterLinesUpdate),
+    second_stage_loop(GameStateAfterLinesUpdate).
 
-% handle_remove_move/1 - Handles whether to perform a remove move or continue the game loop
-handle_remove_move(GameStateAfterMove) :-
+% handle_remove_move/2 - Handles whether to perform a remove move or continue the game loop
+handle_remove_move(GameStateAfterMove, GameStateAfterRemove) :-
     GameStateAfterMove = game_state(second_stage, Board, CurrentPlayer, Pieces, Lines, AllowRemoveCount),
     AllowRemoveCount > 0,
     display_game(GameStateAfterMove),
     display_board(GameStateAfterMove),
     write('Moves left to remove: '), write(AllowRemoveCount), nl,
-    remove(GameStateAfterMove, GameStateAfterRemove),
-    handle_remove_move(GameStateAfterRemove).
+    remove(GameStateAfterMove, TempGameStateAfterRemove),
+    handle_remove_move(TempGameStateAfterRemove, GameStateAfterRemove).
 
-handle_remove_move(GameStateAfterMove) :-
+handle_remove_move(GameStateAfterMove, GameStateAfterRemove) :-
     GameStateAfterMove = game_state(second_stage, Board, CurrentPlayer, Pieces, Lines, AllowRemoveCount),
     AllowRemoveCount == 0,
     next_player(CurrentPlayer, NextPlayer),
-    NewGameState = game_state(second_stage, Board, NextPlayer, Pieces, Lines, 0),
-    second_stage_loop(NewGameState).
+    GameStateAfterRemove = game_state(second_stage, Board, NextPlayer, Pieces, Lines, 0).
 
 % remove/2 - Allows the current player to remove an opponent's piece
 remove(game_state(second_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowRemoveCount), 
@@ -343,6 +344,21 @@ remove(game_state(second_stage, Board, CurrentPlayer, [RedCount, BlackCount], Li
 remove(game_state(second_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowRemoveCount), SameGameState) :-
     write('Invalid remove move. Please try again.'), nl,
     remove(game_state(second_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowRemoveCount), SameGameState).
+
+% update_lines/2 - Updates the Lines in the game state based on the current board
+update_lines(game_state(Stage, Board, CurrentPlayer, Pieces, OldLines, AllowRemoveCount), 
+             game_state(Stage, Board, CurrentPlayer, Pieces, NewLines, AllowRemoveCount)) :-
+    straight_lines(StraightLines),
+    findall(Line, (member(Line, StraightLines), all_same_player(Board, Line)), NewLines),
+    write('OldLines: '), write(OldLines), nl,
+    write('NewLines: '), write(NewLines), nl.
+
+% all_same_player/2 - Verifies that all positions in a line are occupied by the same player
+all_same_player(Board, [Pos1, Pos2, Pos3]) :-
+    memberchk(Pos1-Player, Board),
+    memberchk(Pos2-Player, Board),
+    memberchk(Pos3-Player, Board),
+    Player \= empty.
 
 % game_over/2 - Checks if the game is over and identifies the winner
 game_over(game_state(_, _, _, [RedCount, _], _, _), black) :-
