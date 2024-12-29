@@ -31,14 +31,14 @@ handle_option(_) :- write('Invalid option. Please try again.'), nl, play.
 % start_game/2 - Starts the game with the given player types
 start_game(Player1, Player2) :-
     initial_state([Player1, Player2], GameState),
-    second_stage_loop(GameState).
+    first_stage_loop(GameState).
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1, Player2], game_state(second_stage, Board, Player2, [11, 11], [], 0)) :-
+initial_state([Player1, Player2], game_state(first_stage, Board, Player1, [7, 7], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
-        a1-empty, d1-red, g1-empty, 
+        a1-red, d1-red, g1-black, 
         b2-black, d2-black, f2-red, 
         c3-red, d3-black, e3-empty,
         a4-black, b4-red, c4-black, e4-red, f4-black, g4-red, 
@@ -54,6 +54,7 @@ first_stage_loop(GameState) :-
     display_board(GameState),
     first_stage_over(GameState, Transition),
     !,
+    write('Entering the second stage (Move Stage) ...'), nl,
     Transition.
 
 first_stage_loop(GameState) :-
@@ -132,10 +133,8 @@ press_down(game_state(first_stage, Board, CurrentPlayer, [RedCount, BlackCount],
     read(PressMove),
     skip_line,
     valid_position(PressMove),
-    memberchk(PressMove-Opponent, Board),
-    Opponent \= CurrentPlayer,
-    Opponent \= empty,
-    Opponent \= pressed,
+    next_player(CurrentPlayer, NextPlayer),
+    memberchk(PressMove-NextPlayer, Board),
     update_board(Board, PressMove, pressed, NewBoard),
     decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
     NewAllowPressCount is AllowPressCount - 1,
@@ -299,8 +298,6 @@ count_pieces([_ | Rest], Player, Count) :-
 % second_stage_loop/1 - Second stage loop of the game
 second_stage_loop(GameState) :-
     GameState = game_state(second_stage, Board, CurrentPlayer, Pieces, Lines, AllowRemoveCount),
-    write('Entering the second stage (Move Stage) ...'), nl,
-    write('Game state: '), write(GameState), nl,
     display_game(GameState),
     display_board(GameState),
     game_over(GameState, Winner),
@@ -326,7 +323,7 @@ handle_remove_move(GameStateAfterMove) :-
     GameStateAfterMove = game_state(second_stage, Board, CurrentPlayer, Pieces, Lines, AllowRemoveCount),
     AllowRemoveCount == 0,
     next_player(CurrentPlayer, NextPlayer),
-    NewGameState = game_state(seond_stage, Board, NextPlayer, Pieces, Lines, 0),
+    NewGameState = game_state(second_stage, Board, NextPlayer, Pieces, Lines, 0),
     second_stage_loop(NewGameState).
 
 % remove/2 - Allows the current player to remove an opponent's piece
@@ -335,14 +332,11 @@ remove(game_state(second_stage, Board, CurrentPlayer, [RedCount, BlackCount], Li
     write('You formed a line! Choose an opponent\'s piece to remove: '),
     read(RemoveMove),
     skip_line,
-    write('RemoveMove: '), write(RemoveMove), nl,  % Debugging statement
     valid_position(RemoveMove),
-    memberchk(RemoveMove-Opponent, Board),
-    Opponent \= CurrentPlayer,
-    Opponent \= empty,
-    write('Removing piece at: '), write(RemoveMove), nl,
+    next_player(CurrentPlayer, NextPlayer),
+    memberchk(RemoveMove-NextPlayer, Board),
     update_board(Board, RemoveMove, empty, NewBoard),
-    decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
+    decrement_piece_count(NextPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
     NewAllowRemoveCount is AllowRemoveCount - 1,
     !.
 

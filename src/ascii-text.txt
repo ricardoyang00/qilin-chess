@@ -80,7 +80,7 @@
 ONE LINE FOR RED AND NEXT PLAY RED d6 BLACK e3 TO LET BLACK HAVE 1 LINE
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1, Player2], game_state(Board, Player1, [6, 7], [[a1, b2, c3]], 0)) :-
+initial_state([Player1, Player2], game_state(first_stage, Board, Player1, [6, 7], [[a1, b2, c3]], 0)) :-
     % Initialize the board with empty positions
     Board = [
         a1-red, d1-pressed, g1-black, 
@@ -95,7 +95,7 @@ initial_state([Player1, Player2], game_state(Board, Player1, [6, 7], [[a1, b2, c
 NO LINES AND NO PRESSED
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1, Player2], game_state(Board, Player1, [7, 7], [], 0)) :-
+initial_state([Player1, Player2], game_state(first_stage, Board, Player1, [7, 7], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
         a1-red, d1-red, g1-black, 
@@ -110,7 +110,7 @@ initial_state([Player1, Player2], game_state(Board, Player1, [7, 7], [], 0)) :-
 RED PLAYS AND GETS 2 PRESS MOVES
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1, Player2], game_state(Board, Player1, [14, 14], [], 0)) :-
+initial_state([Player1, Player2], game_state(first_stage, Board, Player1, [14, 14], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
         a1-red, d1-black, g1-empty, 
@@ -130,9 +130,9 @@ initial_state([Player1, Player2], game_state(second_stage, Board, Player2, [11, 
     Board = [
         a1-empty, d1-red, g1-empty, 
         b2-black, d2-black, f2-red, 
-        c3-red, d3-black, e3-empty,
+        c3-red, d3-black, e3-black,
         a4-black, b4-red, c4-black, e4-red, f4-black, g4-red, 
         c5-red, d5-black, e5-red,
-        b6-black, d6-empty, f6-red, 
+        b6-black, d6-red, f6-red, 
         a7-black, d7-red, g7-black
     ].
