@@ -59,7 +59,9 @@ first_stage_loop(GameState) :-
     Transition.
 
 first_stage_loop(GameState) :-
-    read_move(GameState, Move),
+    valid_moves(GameState, ValidMoves),
+    write('Valid Moves: '), write(ValidMoves), nl,
+    read_move(GameState, Move, ValidMoves),
     move(GameState, Move, GameStateAfterMove),
     handle_press_down_move(GameStateAfterMove).
 
@@ -92,10 +94,8 @@ valid_moves(game_state(second_stage, Board, CurrentPlayer, _, _, _), ListOfMoves
         atom_concat(From, To, Move)         % Create the move string
     ), ListOfMoves).
 
-% read_move/2 - Reads a move from the human player based on the game state
-read_move(game_state(first_stage, Board, CurrentPlayer, _, _, _), Move) :-
-    valid_moves(game_state(first_stage, Board, CurrentPlayer, _, _, _), ValidMoves),
-    write('Valid Moves: '), write(ValidMoves), nl,
+% read_move/3 - Reads a move from the human player based on the game state
+read_move(GameState, Move, ValidMoves) :-
     write('Enter your move: '),
     read(Move),
     skip_line,
@@ -103,9 +103,7 @@ read_move(game_state(first_stage, Board, CurrentPlayer, _, _, _), Move) :-
     memberchk(Move, ValidMoves),
     !.
 
-read_move(game_state(second_stage, Board, CurrentPlayer, _, _, _), Move) :-
-    valid_moves(game_state(second_stage, Board, CurrentPlayer, _, _, _), ValidMoves),
-    write('Valid Moves: '), write(ValidMoves), nl,
+read_move(GameState, Move, ValidMoves) :-
     write('Enter your move: '),
     read(Move),
     skip_line,
@@ -116,9 +114,9 @@ read_move(game_state(second_stage, Board, CurrentPlayer, _, _, _), Move) :-
     memberchk(Move, ValidMoves),
     !.
 
-read_move(GameState, Move) :-
+read_move(GameState, Move, ValidMoves) :-
     write('Invalid move. Please try again.'), nl,
-    read_move(GameState, Move).
+    read_move(GameState, Move, ValidMoves).
 
 % move/3 - Validates and executes a move
 move(game_state(Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowRewardMoveCount), Move, game_state(Stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], NewLines, NewAllowRewardMoveCount)) :-
@@ -313,7 +311,18 @@ second_stage_loop(GameState) :-
     write('GAME OVER, WINNER IS: '), write(Winner), nl.
 
 second_stage_loop(GameState) :-
-    read_move(GameState, Move),
+    valid_moves(GameState, []),  % No valid moves left
+    GameState = game_state(_, _, CurrentPlayer, _, _, _),
+    write('Valid Moves: []'), nl,
+    write('YOU HAVE NO VALID MOVES LEFT'), nl,
+    next_player(CurrentPlayer, Winner),
+    write('GAME OVER, WINNER IS: '), write(Winner), nl.
+    
+second_stage_loop(GameState) :-
+    valid_moves(GameState, ValidMoves),
+    ValidMoves \= [],
+    write('Valid Moves: '), write(ValidMoves), nl,
+    read_move(GameState, Move, ValidMoves),
     move(GameState, Move, GameStateAfterMove),
     handle_remove_move(GameStateAfterMove, GameStateAfterRemove),
     update_lines(GameStateAfterRemove, GameStateAfterLinesUpdate),
