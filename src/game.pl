@@ -8,6 +8,7 @@ forall(Condition, Action) :-
 % Debug function to see board.
 display_board(game_state(Stage, Board, _, [RedCount, BlackCount], _, _)) :-
     write('Current Board State: '), nl,
+    write('Board: '), write(Board), nl,
     write('Stage: '), write(Stage), nl,
     write('Pieces left: '), nl,
     write('Red: '), write(RedCount), nl,
@@ -58,7 +59,7 @@ first_stage_loop(GameState) :-
     Transition.
 
 first_stage_loop(GameState) :-
-    choose_move(GameState, Move),
+    read_move(GameState, Move),
     move(GameState, Move, GameStateAfterMove),
     handle_press_down_move(GameStateAfterMove).
 
@@ -79,45 +80,52 @@ handle_press_down_move(GameStateAfterMove) :-
     NewGameState = game_state(first_stage, Board, NextPlayer, Pieces, Lines, 0),
     first_stage_loop(NewGameState).
 
-% choose_move/2 - Chooses a move for the human player
-choose_move(game_state(Stage, Board, CurrentPlayer, _, _, _), Move) :-
-    read_move(Stage, Board, Move, CurrentPlayer).
+% valid_moves/2 - Returns a list of all possible valid moves
+valid_moves(game_state(first_stage, Board, _, _, _, _), ListOfMoves) :-
+    findall(Position, member(Position-empty, Board), ListOfMoves).
 
-% valid_move/2 - Checks if a move is valid
-valid_move(Board, Position) :-
-    memberchk(Position-empty, Board).
+valid_moves(game_state(second_stage, Board, CurrentPlayer, _, _, _), ListOfMoves) :-
+    findall(Move, (
+        member(From-CurrentPlayer, Board),  % Find the player's pieces
+        adjacent_position(From, To),        % Get adjacent positions
+        member(To-empty, Board),            % Ensure the destination is empty
+        atom_concat(From, To, Move)         % Create the move string
+    ), ListOfMoves).
 
-% read_move/3 - Reads a move from the human player based on the stage
-read_move(first_stage, Board, Move, _) :-
-    write('Enter your move (e.g., a1): '),
+% read_move/2 - Reads a move from the human player based on the game state
+read_move(game_state(first_stage, Board, CurrentPlayer, _, _, _), Move) :-
+    valid_moves(game_state(first_stage, Board, CurrentPlayer, _, _, _), ValidMoves),
+    write('Valid Moves: '), write(ValidMoves), nl,
+    write('Enter your move: '),
     read(Move),
     skip_line,
     valid_position(Move),
-    valid_move(Board, Move),
+    memberchk(Move, ValidMoves),
     !.
 
-read_move(second_stage, Board, Move, CurrentPlayer) :-
-    write('Enter your move (e.g., a1b4): '),
+read_move(game_state(second_stage, Board, CurrentPlayer, _, _, _), Move) :-
+    valid_moves(game_state(second_stage, Board, CurrentPlayer, _, _, _), ValidMoves),
+    write('Valid Moves: '), write(ValidMoves), nl,
+    write('Enter your move: '),
     read(Move),
     skip_line,
     sub_atom(Move, 0, 2, _, From),
     sub_atom(Move, 2, 2, 0, To),
     valid_position(From),
     valid_position(To),
-    memberchk(From-CurrentPlayer, Board),
-    valid_move(Board, To),
+    memberchk(Move, ValidMoves),
     !.
 
-read_move(Stage, Board, Move, CurrentPlayer) :-
+read_move(GameState, Move) :-
     write('Invalid move. Please try again.'), nl,
-    read_move(Stage, Board, Move, CurrentPlayer).
+    read_move(GameState, Move).
 
 % move/3 - Validates and executes a move
 move(game_state(Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowRewardMoveCount), Move, game_state(Stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], NewLines, NewAllowRewardMoveCount)) :-
     update_board(Board, Move, CurrentPlayer, NewBoard),
-    (Stage == first_stage ->
+    ( Stage == first_stage,
         decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount)
-    ;
+    ; Stage == second_stage, 
         NewRedCount = RedCount,
         NewBlackCount = BlackCount
     ),
@@ -305,7 +313,7 @@ second_stage_loop(GameState) :-
     write('GAME OVER, WINNER IS: '), write(Winner), nl.
 
 second_stage_loop(GameState) :-
-    choose_move(GameState, Move),
+    read_move(GameState, Move),
     move(GameState, Move, GameStateAfterMove),
     handle_remove_move(GameStateAfterMove, GameStateAfterRemove),
     update_lines(GameStateAfterRemove, GameStateAfterLinesUpdate),
