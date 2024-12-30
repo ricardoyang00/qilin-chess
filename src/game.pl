@@ -118,16 +118,21 @@ read_move(GameState, Move, ValidMoves) :-
     write('Invalid move. Please try again.'), nl,
     read_move(GameState, Move, ValidMoves).
 
-% move/3 - Validates and executes a move
-move(game_state(Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowRewardMoveCount), Move, game_state(Stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], NewLines, NewAllowRewardMoveCount)) :-
+% move/3 - Validates and executes a move for the first stage
+move(game_state(first_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowRewardMoveCount), Move, game_state(first_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], NewLines, NewAllowRewardMoveCount)) :-
     update_board(Board, Move, CurrentPlayer, NewBoard),
-    ( Stage == first_stage,
-        decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount)
-    ; Stage == second_stage, 
-        NewRedCount = RedCount,
-        NewBlackCount = BlackCount
-    ),
-    check_lines_formed(Stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
+    decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
+    check_lines_formed(first_stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
+    NewLines = UpdatedLines,
+    NewAllowRewardMoveCount = NewLineCount,
+    !.
+
+% move/3 - Validates and executes a move for the second stage
+move(game_state(second_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowRewardMoveCount), Move, game_state(second_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], NewLines, NewAllowRewardMoveCount)) :-
+    update_board(Board, Move, CurrentPlayer, NewBoard),
+    NewRedCount = RedCount,
+    NewBlackCount = BlackCount,
+    check_lines_formed(second_stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
     NewLines = UpdatedLines,
     NewAllowRewardMoveCount = NewLineCount,
     !.
@@ -236,33 +241,32 @@ all_in_line(Board, [Pos1, Pos2, Pos3], Player) :-
 next_player(red, black).
 next_player(black, red).
 
-% first_stage_over/2 - Checks if the stage 1 is over and identifies the winner
-first_stage_over(game_state(Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), second_stage_loop(NewGameState)) :-
+% first_stage_over/2 - Checks if the stage 1 is over and handles the board
+first_stage_over(GameState, second_stage_loop(NewGameState)) :-
+    GameState = game_state(Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
     \+ memberchk(_-empty, Board),
     write('Play Stage complete. Transitioning game to Move Stage.'), nl,
     
     % Replace pressed pieces with empty ones using recursion
     remove_all_pressed(Board, BoardWithoutPressed, PressedFound),
+    handle_pressed_pieces(PressedFound, GameState, BoardWithoutPressed, NewGameState).
 
-    (   
-        % Case 1: No pressed pieces found, allow each player to remove one piece
-        PressedFound = false,
-        write('No pressed pieces. Each side will remove one piece.'), nl,
-        choose_piece_to_remove(Board, red, BoardAfterRedRemoval),
-        display_game(game_state(Stage, BoardAfterRedRemoval, black, [RedCount, BlackCount], Lines, AllowPressCount)),
-        choose_piece_to_remove(BoardAfterRedRemoval, black, FinalBoard),
-        count_pieces(BoardAfterRedRemoval, red, NewRedCount),
-        count_pieces(FinalBoard, black, NewBlackCount)
-    ;   
-        % Case 2: Pressed pieces found, update the board and counts
-        PressedFound = true,
-        write('Removing pressed pieces...'), nl,
-        FinalBoard = BoardWithoutPressed,
-        count_pieces(BoardWithoutPressed, red, NewRedCount),
-        count_pieces(BoardWithoutPressed, black, NewBlackCount)
-    ),
+% handle_pressed_pieces/4 - Handles the cases based on whether pressed pieces were found
+handle_pressed_pieces(false, game_state(Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), BoardWithoutPressed, NewGameState) :-
+    write('No pressed pieces. Each side will remove one piece.'), nl,
+    choose_piece_to_remove(Board, red, BoardAfterRedRemoval),
+    display_game(game_state(Stage, BoardAfterRedRemoval, black, [RedCount, BlackCount], Lines, AllowPressCount)),
+    choose_piece_to_remove(BoardAfterRedRemoval, black, FinalBoard),
+    count_pieces(BoardAfterRedRemoval, red, NewRedCount),
+    count_pieces(FinalBoard, black, NewBlackCount),
+    next_player(CurrentPlayer, NextPlayer),
+    NewGameState = game_state(second_stage, FinalBoard, NextPlayer, [NewRedCount, NewBlackCount], [], 0).
 
-    % Prepare the game state for the second stage
+handle_pressed_pieces(true, game_state(Stage, _, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), BoardWithoutPressed, NewGameState) :-
+    write('Removing pressed pieces...'), nl,
+    FinalBoard = BoardWithoutPressed,
+    count_pieces(BoardWithoutPressed, red, NewRedCount),
+    count_pieces(BoardWithoutPressed, black, NewBlackCount),
     next_player(CurrentPlayer, NextPlayer),
     NewGameState = game_state(second_stage, FinalBoard, NextPlayer, [NewRedCount, NewBlackCount], [], 0).
 
