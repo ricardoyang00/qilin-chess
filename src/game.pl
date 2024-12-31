@@ -36,7 +36,7 @@ start_game(Player1, Player2) :-
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1, Player2], game_state(first_stage, Board, Player1, [7, 7], [], 0)) :-
+initial_state([Player1, Player2], game_state(first_stage, Board, Player2, [6, 7], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
         a1-red, d1-red, g1-black, 
@@ -44,7 +44,7 @@ initial_state([Player1, Player2], game_state(first_stage, Board, Player1, [7, 7]
         c3-red, d3-black, e3-empty,
         a4-black, b4-red, c4-black, e4-red, f4-black, g4-red, 
         c5-red, d5-black, e5-red,
-        b6-black, d6-empty, f6-red, 
+        b6-black, d6-red, f6-red, 
         a7-black, d7-red, g7-black
     ].
 
@@ -66,7 +66,10 @@ first_stage_loop(GameState) :-
     handle_press_down_move(GameStateAfterMove).
 
 % valid_moves/2 - Returns a list of all possible valid moves
-valid_moves(game_state(_, Board, CurrentPlayer, _, _, AllowRewardMoveCount), ListOfMoves) :-
+valid_moves(game_state(transition_stage, Board, CurrentPlayer, _, _, _), ListOfMoves) :-
+    setof(Position, member(Position-CurrentPlayer, Board), ListOfMoves).
+
+valid_moves(game_state(first_stage, Board, CurrentPlayer, _, _, AllowRewardMoveCount), ListOfMoves) :-
     AllowRewardMoveCount > 0,
     next_player(CurrentPlayer, Opponent),
     setof(Position, member(Position-Opponent, Board), ListOfMoves).
@@ -82,6 +85,11 @@ valid_moves(game_state(second_stage, Board, CurrentPlayer, _, _, _), ListOfMoves
         atom_concat(From, To, Move)         % Create the move string
     ), UnsortedMoves),
     sort(UnsortedMoves, ListOfMoves).
+
+valid_moves(game_state(second_stage, Board, CurrentPlayer, _, _, AllowRewardMoveCount), ListOfMoves) :-
+    AllowRewardMoveCount > 0,
+    next_player(CurrentPlayer, Opponent),
+    setof(Position, member(Position-Opponent, Board), ListOfMoves).
 
 % read_move/3 - Reads a move from the human player based on the game state
 read_move(GameState, Move, ValidMoves) :-
@@ -265,20 +273,25 @@ first_stage_over(GameState, second_stage_loop(NewGameState)) :-
     
     % Replace pressed pieces with empty ones using recursion
     remove_all_pressed(Board, BoardWithoutPressed, PressedFound),
-    handle_pressed_pieces(PressedFound, GameState, BoardWithoutPressed, NewGameState).
+    TransitionState = game_state(transition_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
+    handle_pressed_pieces(PressedFound, TransitionState, BoardWithoutPressed, NewGameState).
 
 % handle_pressed_pieces/4 - Handles the cases based on whether pressed pieces were found
-handle_pressed_pieces(false, game_state(Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), BoardWithoutPressed, NewGameState) :-
+handle_pressed_pieces(false, game_state(transition_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), BoardWithoutPressed, NewGameState) :-
+    GameState = game_state(transition_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
     write('No pressed pieces. Each side will remove one piece.'), nl,
-    choose_piece_to_remove(Board, red, BoardAfterRedRemoval),
-    display_game(game_state(Stage, BoardAfterRedRemoval, black, [RedCount, BlackCount], Lines, AllowPressCount)),
-    choose_piece_to_remove(BoardAfterRedRemoval, black, FinalBoard),
+    choose_piece_to_remove(GameState, GameStateAfterRedRemoval),
+    GameStateAfterRedRemoval = game_state(_, BoardAfterRedRemoval, CurrentPlayer, _, _, _),
     count_pieces(BoardAfterRedRemoval, red, NewRedCount),
-    count_pieces(FinalBoard, black, NewBlackCount),
     next_player(CurrentPlayer, NextPlayer),
+    TempGameState = game_state(_, BoardAfterRedRemoval, NextPlayer, _, _, _),
+    display_game(TempGameState),
+    choose_piece_to_remove(TempGameState, GameStateAfterBlackRemoval),
+    GameStateAfterBlackRemoval = game_state(_, FinalBoard, _, _, _, _),
+    count_pieces(FinalBoard, black, NewBlackCount),
     NewGameState = game_state(second_stage, FinalBoard, NextPlayer, [NewRedCount, NewBlackCount], [], 0).
 
-handle_pressed_pieces(true, game_state(Stage, _, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), BoardWithoutPressed, NewGameState) :-
+handle_pressed_pieces(true, game_state(transition_stage, _, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), BoardWithoutPressed, NewGameState) :-
     write('Removing pressed pieces...'), nl,
     FinalBoard = BoardWithoutPressed,
     count_pieces(BoardWithoutPressed, red, NewRedCount),
@@ -295,17 +308,29 @@ remove_all_pressed([Position-pressed | Rest], [Position-empty | NewRest], true) 
 remove_all_pressed([Other | Rest], [Other | NewRest], PressedFound) :-
     remove_all_pressed(Rest, NewRest, PressedFound).
 
-% choose_piece_to_remove/3 - Allows a player to choose one piece to remove
-choose_piece_to_remove(Board, Player, NewBoard) :-
-    write(Player), write(', choose a piece to remove (e.g., a1): '), nl,
+% choose_piece_to_remove/2 - Allows a player to choose one piece to remove
+choose_piece_to_remove(GameState, NewGameState) :-
+    valid_moves(GameState, ValidMoves),  % Get the player's own pieces
+    write('Valid Moves: '), write(ValidMoves), nl,
+    GameState = game_state(Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
+    write(CurrentPlayer), write(', choose a piece to remove: '), nl,
     read(Position),
     skip_line,
-    valid_removal(Board, Position, Player),
-    update_board(Board, Position, empty, NewBoard).
+    process_remove_choice(GameState, Position, ValidMoves, NewGameState).
 
-choose_piece_to_remove(Board, Player, NewBoard) :-
+% process_remove_choice/4 - Processes the remove choice based on its validity
+process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
+    valid_position(Position),
+    memberchk(Position, ValidMoves),
+    GameState = game_state(Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
+    update_board(Board, Position, empty, NewBoard),
+    NewGameState = game_state(Stage, NewBoard, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
+    !.
+
+process_remove_choice(GameState, _, _, _) :-
     write('Invalid choice. Please try again.'), nl,
-    choose_piece_to_remove(Board, Player, NewBoard).
+    choose_piece_to_remove(GameState, _),
+    !.
 
 % valid_removal/3 - Checks if the chosen piece can be removed
 valid_removal(Board, Position, Player) :-
