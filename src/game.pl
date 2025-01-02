@@ -27,7 +27,7 @@ play :-
 
 % handle_option/1 - Handles the user's menu choice
 handle_option(1) :- start_game(human, human).
-handle_option(2) :- start_game(computer-1, human).
+handle_option(2) :- start_game(human, computer-1).
 handle_option(3) :- display_rules.
 handle_option(0) :- write('Exiting the game.'), nl, !.
 handle_option(_) :- write('Invalid option. Please try again.'), nl, play.
@@ -108,7 +108,12 @@ valid_moves(game_state(_, first_stage, Board, CurrentPlayer, _, _, AllowRewardMo
 valid_moves(game_state(_, first_stage, Board, _, _, _, 0), ListOfMoves) :-
     setof(Position, member(Position-empty, Board), ListOfMoves).
 
-valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, _), ListOfMoves) :-
+valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, AllowRewardMoveCount), ListOfMoves) :-
+    AllowRewardMoveCount > 0,
+    next_player(CurrentPlayer, Opponent),
+    setof(Position, member(Position-Opponent, Board), ListOfMoves).
+
+valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, 0), ListOfMoves) :-
     findall(Move, (
         member(From-CurrentPlayer, Board),  % Find the player's pieces
         adjacent_position(From, To),        % Get adjacent positions
@@ -116,11 +121,6 @@ valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, _), ListOfMo
         atom_concat(From, To, Move)         % Create the move string
     ), UnsortedMoves),
     sort(UnsortedMoves, ListOfMoves).
-
-valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, AllowRewardMoveCount), ListOfMoves) :-
-    AllowRewardMoveCount > 0,
-    next_player(CurrentPlayer, Opponent),
-    setof(Position, member(Position-Opponent, Board), ListOfMoves).
 
 % process_move/3 - Processes user input as a move
 process_move(Move, ValidMoves, Move) :-
@@ -191,7 +191,8 @@ press_down(GameState, human, NewGameState) :-
 press_down(GameState, computer-Level, NewGameState) :-
     valid_moves(GameState, ValidMoves),
     choose_move(GameState, computer-Level, PressMove),
-    process_press_down_move(GameState, PressMove, ValidMoves, NewGameState).
+    process_press_down_move(GameState, PressMove, ValidMoves, NewGameState),
+    !.
 
 % process_press_down_move/4 - Processes the press down move based on its validity
 process_press_down_move(GameState, PressMove, ValidMoves, NewGameState) :-
@@ -354,7 +355,8 @@ choose_piece_to_remove(GameState, human, NewGameState) :-
 choose_piece_to_remove(GameState, computer-Level, NewGameState) :-
     valid_moves(GameState, ValidMoves),
     choose_move(GameState, computer-Level, Position),
-    process_remove_choice(GameState, Position, ValidMoves, NewGameState).
+    process_remove_choice(GameState, Position, ValidMoves, NewGameState),
+    !.
 
 % process_remove_choice/4 - Processes the remove choice based on its validity
 process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
@@ -388,17 +390,19 @@ second_stage_loop(GameState) :-
     write('GAME OVER, WINNER IS: '), write(Winner), nl.
 
 second_stage_loop(GameState) :-
-    valid_moves(GameState, []),  % No valid moves left
     GameState = game_state(_, _, _, CurrentPlayer, _, _, _),
+    valid_moves(GameState, []),  % No valid moves left
     write('Valid Moves: []'), nl,
     write('YOU HAVE NO VALID MOVES LEFT'), nl,
     next_player(CurrentPlayer, Winner),
     write('GAME OVER, WINNER IS: '), write(Winner), nl.
     
 second_stage_loop(GameState) :-
+    GameState = game_state(PlayerTypes, second_stage, Board, CurrentPlayer, Pieces, Lines, AllowRemoveCount),
     valid_moves(GameState, ValidMoves),
     ValidMoves \= [],
-    read_move(GameState, Move, ValidMoves),
+    get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
+    choose_move(GameState, PlayerType, Move),
     move(GameState, Move, GameStateAfterMove),
     handle_remove_move(GameStateAfterMove, GameStateAfterRemove),
     update_lines(GameStateAfterRemove, GameStateAfterLinesUpdate),
@@ -411,7 +415,8 @@ handle_remove_move(GameStateAfterMove, GameStateAfterRemove) :-
     display_game(GameStateAfterMove),
     display_board(GameStateAfterMove),
     write('Moves left to remove: '), write(AllowRemoveCount), nl,
-    remove(GameStateAfterMove, TempGameStateAfterRemove),
+    get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
+    remove(GameStateAfterMove, PlayerType, TempGameStateAfterRemove),
     handle_remove_move(TempGameStateAfterRemove, GameStateAfterRemove).
 
 handle_remove_move(GameStateAfterMove, GameStateAfterRemove) :-
@@ -420,14 +425,21 @@ handle_remove_move(GameStateAfterMove, GameStateAfterRemove) :-
     next_player(CurrentPlayer, NextPlayer),
     GameStateAfterRemove = game_state(PlayerTypes, second_stage, Board, NextPlayer, Pieces, Lines, 0).
 
-% remove/2 - Allows the current player to remove an opponent's piece
-remove(GameState, NewGameState) :-
+% remove/3 - Allows the current player to remove an opponent's piece
+remove(GameState, human, NewGameState) :-
     valid_moves(GameState, ValidMoves),
     repeat,
     write('Valid Moves: '), write(ValidMoves), nl,
     write('You formed a line! Choose an opponent\'s piece to remove: '),
     read(RemoveMove),
     skip_line,
+    process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState),
+    !.
+
+remove(GameState, computer-Level, NewGameState) :-
+    valid_moves(GameState, ValidMoves),
+    write('Valid Moves: '), write(ValidMoves), nl,
+    choose_move(GameState, computer-Level, RemoveMove),
     process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState),
     !.
 
@@ -447,8 +459,8 @@ process_remove_move(_, _, _, _) :-
     fail.
 
 % update_lines/2 - Updates the Lines in the game state based on the current board
-update_lines(game_state(Stage, Board, CurrentPlayer, Pieces, OldLines, AllowRemoveCount), 
-             game_state(Stage, Board, CurrentPlayer, Pieces, NewLines, AllowRemoveCount)) :-
+update_lines(game_state(PlayerTypes, Stage, Board, CurrentPlayer, Pieces, OldLines, AllowRemoveCount), 
+             game_state(PlayerTypes, Stage, Board, CurrentPlayer, Pieces, NewLines, AllowRemoveCount)) :-
     straight_lines(StraightLines),
     findall(Line, (member(Line, StraightLines), all_same_player(Board, Line)), NewLines),
     write('OldLines: '), write(OldLines), nl,
