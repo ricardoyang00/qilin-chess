@@ -93,30 +93,30 @@ valid_moves(game_state(second_stage, Board, CurrentPlayer, _, _, AllowRewardMove
 
 % read_move/3 - Reads a move from the human player based on the game state
 read_move(GameState, Move, ValidMoves) :-
+    repeat,
     write('Enter your move: '),
-    read(Move),
+    read(UserInput),
     skip_line,
-    process_move(GameState, Move, ValidMoves).
-
-% process_move/3 - Processes the move based on its format
-process_move(GameState, Move, ValidMoves) :-
-    atom_length(Move, 2),
-    valid_position(Move),
-    memberchk(Move, ValidMoves),
+    process_move(UserInput, ValidMoves, Move),
     !.
 
-process_move(GameState, Move, ValidMoves) :-
+% process_move/3 - Processes user input as a move
+process_move(Move, ValidMoves, Move) :-
+    atom_length(Move, 2),
+    valid_position(Move),
+    memberchk(Move, ValidMoves).
+
+process_move(Move, ValidMoves, Move) :-
     atom_length(Move, 4),
     sub_atom(Move, 0, 2, _, From),
     sub_atom(Move, 2, 2, 0, To),
     valid_position(From),
     valid_position(To),
-    memberchk(Move, ValidMoves),
-    !.
+    memberchk(Move, ValidMoves).
 
-process_move(GameState, _, ValidMoves) :-
+process_move(_, _, _) :-
     write('Invalid move. Please try again.'), nl,
-    read_move(GameState, _, ValidMoves).
+    fail.
 
 % move/3 - Validates and executes a move for the first stage
 move(game_state(first_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), Move, game_state(first_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], NewLines, NewAllowPressCount)) :-
