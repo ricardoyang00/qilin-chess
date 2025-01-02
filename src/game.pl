@@ -27,7 +27,7 @@ play :-
 
 % handle_option/1 - Handles the user's menu choice
 handle_option(1) :- start_game(human, human).
-handle_option(2) :- start_game(human, computer-1).
+handle_option(2) :- start_game(computer-1, human).
 handle_option(3) :- display_rules.
 handle_option(0) :- write('Exiting the game.'), nl, !.
 handle_option(_) :- write('Invalid option. Please try again.'), nl, play.
@@ -50,6 +50,11 @@ initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type],
         a7-empty, d7-empty, g7-empty
     ].
 
+% get_player_type/3 - Determines the player type based on the current player
+get_player_type(CurrentPlayer, PlayerTypes, PlayerType) :-
+    nth1(CurrentPlayerIndex, [red, black], CurrentPlayer),
+    nth1(CurrentPlayerIndex, PlayerTypes, PlayerType).
+
 % first_stage_loop/1 - First stage loop of the game
 first_stage_loop(GameState) :-
     GameState = game_state(PlayerTypes, first_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
@@ -62,8 +67,7 @@ first_stage_loop(GameState) :-
 
 first_stage_loop(GameState) :-
     GameState = game_state(PlayerTypes, first_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
-    nth1(CurrentPlayerIndex, [red, black], CurrentPlayer),
-    nth1(CurrentPlayerIndex, PlayerTypes, PlayerType),
+    get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
     choose_move(GameState, PlayerType, Move),
     move(GameState, Move, GameStateAfterMove),
     handle_press_down_move(GameStateAfterMove).
@@ -162,7 +166,8 @@ handle_press_down_move(GameStateAfterMove) :-
     display_game(GameStateAfterMove),
     display_board(GameStateAfterMove),
     write('Moves left to press down: '), write(AllowPressCount), nl,
-    press_down(GameStateAfterMove, GameStateAfterPress),
+    get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
+    press_down(GameStateAfterMove, PlayerType, GameStateAfterPress),
     handle_press_down_move(GameStateAfterPress).
 
 handle_press_down_move(GameStateAfterMove) :-
@@ -172,8 +177,8 @@ handle_press_down_move(GameStateAfterMove) :-
     NewGameState = game_state(PlayerTypes, first_stage, Board, NextPlayer, Pieces, Lines, 0),
     first_stage_loop(NewGameState).
 
-% press_down/2 - Allows the current player to press down an opponent's piece
-press_down(GameState, NewGameState) :-
+% press_down/3 - Allows the current player to press down an opponent's piece
+press_down(GameState, human, NewGameState) :-
     valid_moves(GameState, ValidMoves),
     repeat,
     write('Valid Moves: '), write(ValidMoves), nl,
@@ -182,6 +187,10 @@ press_down(GameState, NewGameState) :-
     skip_line,
     process_press_down_move(GameState, PressMove, ValidMoves, NewGameState),
     !.
+
+press_down(GameState, computer-Level, NewGameState) :-
+    choose_move(GameState, computer-Level, PressMove),
+    process_press_down_move(GameState, PressMove, ValidMoves, NewGameState).
 
 % process_press_down_move/4 - Processes the press down move based on its validity
 process_press_down_move(GameState, PressMove, ValidMoves, NewGameState) :-
