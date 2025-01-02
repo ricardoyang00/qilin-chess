@@ -38,16 +38,16 @@ start_game(Player1Type, Player2Type) :-
     first_stage_loop(GameState).
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
-initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [18, 18], [], 0)) :-
+initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [7, 7], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
-        a1-empty, d1-empty, g1-empty, 
-        b2-empty, d2-empty, f2-empty, 
-        c3-empty, d3-empty, e3-empty,
-        a4-empty, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
-        c5-empty, d5-empty, e5-empty,
-        b6-empty, d6-empty, f6-empty, 
-        a7-empty, d7-empty, g7-empty
+        a1-red, d1-red, g1-black, 
+        b2-black, d2-black, f2-red, 
+        c3-red, d3-black, e3-empty,
+        a4-black, b4-red, c4-black, e4-red, f4-black, g4-red, 
+        c5-red, d5-black, e5-red,
+        b6-black, d6-empty, f6-red, 
+        a7-black, d7-red, g7-black
     ].
 
 % get_player_type/3 - Determines the player type based on the current player
@@ -189,6 +189,7 @@ press_down(GameState, human, NewGameState) :-
     !.
 
 press_down(GameState, computer-Level, NewGameState) :-
+    valid_moves(GameState, ValidMoves),
     choose_move(GameState, computer-Level, PressMove),
     process_press_down_move(GameState, PressMove, ValidMoves, NewGameState).
 
@@ -308,13 +309,15 @@ first_stage_over(GameState, second_stage_loop(NewGameState)) :-
 handle_pressed_pieces(false, game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), BoardWithoutPressed, NewGameState) :-
     GameState = game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
     write('No pressed pieces. Each side will remove one piece.'), nl,
-    choose_piece_to_remove(GameState, GameStateAfterRedRemoval),
+    get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
+    choose_piece_to_remove(GameState, PlayerType, GameStateAfterRedRemoval),
     GameStateAfterRedRemoval = game_state(PlayerTypes, _, BoardAfterRedRemoval, CurrentPlayer, _, _, _),
     count_pieces(BoardAfterRedRemoval, red, NewRedCount),
     next_player(CurrentPlayer, NextPlayer),
     TempGameState = game_state(PlayerTypes, _, BoardAfterRedRemoval, NextPlayer, _, _, _),
     display_game(TempGameState),
-    choose_piece_to_remove(TempGameState, GameStateAfterBlackRemoval),
+    get_player_type(NextPlayer, PlayerTypes, NextPlayerType),
+    choose_piece_to_remove(TempGameState, NextPlayerType, GameStateAfterBlackRemoval),
     GameStateAfterBlackRemoval = game_state(PlayerTypes, _, FinalBoard, _, _, _, _),
     count_pieces(FinalBoard, black, NewBlackCount),
     NewGameState = game_state(PlayerTypes, second_stage, FinalBoard, NextPlayer, [NewRedCount, NewBlackCount], [], 0).
@@ -336,8 +339,8 @@ remove_all_pressed([Position-pressed | Rest], [Position-empty | NewRest], true) 
 remove_all_pressed([Other | Rest], [Other | NewRest], PressedFound) :-
     remove_all_pressed(Rest, NewRest, PressedFound).
 
-% choose_piece_to_remove/2 - Allows a player to choose one piece to remove
-choose_piece_to_remove(GameState, NewGameState) :-
+% choose_piece_to_remove/3 - Allows a player to choose one piece to remove
+choose_piece_to_remove(GameState, human, NewGameState) :-
     valid_moves(GameState, ValidMoves),  % Get the player's own pieces
     GameState = game_state(PlayerTypes, Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
     repeat,
@@ -347,6 +350,11 @@ choose_piece_to_remove(GameState, NewGameState) :-
     skip_line,
     process_remove_choice(GameState, Position, ValidMoves, NewGameState),
     !.
+
+choose_piece_to_remove(GameState, computer-Level, NewGameState) :-
+    valid_moves(GameState, ValidMoves),
+    choose_move(GameState, computer-Level, Position),
+    process_remove_choice(GameState, Position, ValidMoves, NewGameState).
 
 % process_remove_choice/4 - Processes the remove choice based on its validity
 process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
