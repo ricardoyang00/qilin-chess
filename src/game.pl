@@ -2,9 +2,6 @@
 :- consult('board.pl').
 :- consult('utils.pl').
 
-forall(Condition, Action) :-
-    \+ (Condition, \+ Action).
-
 % Debug function to see board.
 display_board(game_state(Stage, Board, _, [RedCount, BlackCount], _, _)) :-
     write('Current Board State: '), nl,
@@ -60,7 +57,6 @@ first_stage_loop(GameState) :-
 
 first_stage_loop(GameState) :-
     valid_moves(GameState, ValidMoves),
-    write('Valid Moves: '), write(ValidMoves), nl,
     read_move(GameState, Move, ValidMoves),
     move(GameState, Move, GameStateAfterMove),
     handle_press_down_move(GameStateAfterMove).
@@ -94,6 +90,7 @@ valid_moves(game_state(second_stage, Board, CurrentPlayer, _, _, AllowRewardMove
 % read_move/3 - Reads a move from the human player based on the game state
 read_move(GameState, Move, ValidMoves) :-
     repeat,
+    write('Valid Moves: '), write(ValidMoves), nl,
     write('Enter your move: '),
     read(UserInput),
     skip_line,
@@ -157,11 +154,13 @@ handle_press_down_move(GameStateAfterMove) :-
 % press_down/2 - Allows the current player to press down an opponent's piece
 press_down(GameState, NewGameState) :-
     valid_moves(GameState, ValidMoves),
+    repeat,
     write('Valid Moves: '), write(ValidMoves), nl,
     write('You formed a line! Choose an opponent\'s piece to press down: '),
     read(PressMove),
     skip_line,
-    process_press_down_move(GameState, PressMove, ValidMoves, NewGameState).
+    process_press_down_move(GameState, PressMove, ValidMoves, NewGameState),
+    !.
 
 % process_press_down_move/4 - Processes the press down move based on its validity
 process_press_down_move(GameState, PressMove, ValidMoves, NewGameState) :-
@@ -172,12 +171,11 @@ process_press_down_move(GameState, PressMove, ValidMoves, NewGameState) :-
     update_board(Board, PressMove, pressed, NewBoard),
     decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
     NewAllowPressCount is AllowPressCount - 1,
-    NewGameState = game_state(first_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], Lines, NewAllowPressCount),
-    !.
+    NewGameState = game_state(first_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], Lines, NewAllowPressCount).
 
-process_press_down_move(GameState, _, _, _) :-
+process_press_down_move(_, _, _, _) :-
     write('Invalid press down move. Please try again.'), nl,
-    press_down(GameState, _).
+    fail.
 
 % update_board/4 - Updates the board with the player's move or maintains the state if no update
 update_board([], _, _, []). % Base case: empty board
@@ -311,12 +309,14 @@ remove_all_pressed([Other | Rest], [Other | NewRest], PressedFound) :-
 % choose_piece_to_remove/2 - Allows a player to choose one piece to remove
 choose_piece_to_remove(GameState, NewGameState) :-
     valid_moves(GameState, ValidMoves),  % Get the player's own pieces
-    write('Valid Moves: '), write(ValidMoves), nl,
     GameState = game_state(Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
+    repeat,
+    write('Valid Moves: '), write(ValidMoves), nl,
     write(CurrentPlayer), write(', choose a piece to remove: '), nl,
     read(Position),
     skip_line,
-    process_remove_choice(GameState, Position, ValidMoves, NewGameState).
+    process_remove_choice(GameState, Position, ValidMoves, NewGameState),
+    !.
 
 % process_remove_choice/4 - Processes the remove choice based on its validity
 process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
@@ -324,17 +324,11 @@ process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
     memberchk(Position, ValidMoves),
     GameState = game_state(Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
     update_board(Board, Position, empty, NewBoard),
-    NewGameState = game_state(Stage, NewBoard, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
-    !.
+    NewGameState = game_state(Stage, NewBoard, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount).
 
-process_remove_choice(GameState, _, _, _) :-
+process_remove_choice(_, _, _, _) :-
     write('Invalid choice. Please try again.'), nl,
-    choose_piece_to_remove(GameState, _),
-    !.
-
-% valid_removal/3 - Checks if the chosen piece can be removed
-valid_removal(Board, Position, Player) :-
-    memberchk(Position-Player, Board).
+    fail.
 
 % count_pieces/3 - Recursively counts the number of pieces of a given player on the board
 count_pieces([], _, 0). % Base case: empty board, count is 0
@@ -366,7 +360,6 @@ second_stage_loop(GameState) :-
 second_stage_loop(GameState) :-
     valid_moves(GameState, ValidMoves),
     ValidMoves \= [],
-    write('Valid Moves: '), write(ValidMoves), nl,
     read_move(GameState, Move, ValidMoves),
     move(GameState, Move, GameStateAfterMove),
     handle_remove_move(GameStateAfterMove, GameStateAfterRemove),
@@ -392,11 +385,13 @@ handle_remove_move(GameStateAfterMove, GameStateAfterRemove) :-
 % remove/2 - Allows the current player to remove an opponent's piece
 remove(GameState, NewGameState) :-
     valid_moves(GameState, ValidMoves),
+    repeat,
     write('Valid Moves: '), write(ValidMoves), nl,
     write('You formed a line! Choose an opponent\'s piece to remove: '),
     read(RemoveMove),
     skip_line,
-    process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState).
+    process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState),
+    !.
 
 % process_remove_move/4 - Processes the remove move based on its validity
 process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState) :-
@@ -407,12 +402,11 @@ process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState) :-
     update_board(Board, RemoveMove, empty, NewBoard),
     decrement_piece_count(NextPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
     NewAllowRemoveCount is AllowRemoveCount - 1,
-    NewGameState = game_state(second_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], Lines, NewAllowRemoveCount),
-    !.
+    NewGameState = game_state(second_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], Lines, NewAllowRemoveCount).
 
-process_remove_move(GameState, _, _, _) :-
+process_remove_move(_, _, _, _) :-
     write('Invalid remove move. Please try again.'), nl,
-    remove(GameState, _).
+    fail.
 
 % update_lines/2 - Updates the Lines in the game state based on the current board
 update_lines(game_state(Stage, Board, CurrentPlayer, Pieces, OldLines, AllowRemoveCount), 
