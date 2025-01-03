@@ -262,8 +262,7 @@ handle_press_down_move(GameStateAfterMove) :-
     handle_press_down_move(GameStateAfterPress).
 
 handle_press_down_move(GameStateAfterMove) :-
-    GameStateAfterMove = game_state(PlayerTypes, first_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
-    AllowPressCount == 0,
+    GameStateAfterMove = game_state(PlayerTypes, first_stage, Board, CurrentPlayer, Pieces, Lines, 0),
     next_player(CurrentPlayer, NextPlayer),
     NewGameState = game_state(PlayerTypes, first_stage, Board, NextPlayer, Pieces, Lines, 0),
     first_stage_loop(NewGameState).
@@ -511,8 +510,7 @@ handle_remove_move(GameStateAfterMove, GameStateAfterRemove) :-
     handle_remove_move(TempGameStateAfterRemove, GameStateAfterRemove).
 
 handle_remove_move(GameStateAfterMove, GameStateAfterRemove) :-
-    GameStateAfterMove = game_state(PlayerTypes, second_stage, Board, CurrentPlayer, Pieces, Lines, AllowRemoveCount),
-    AllowRemoveCount == 0,
+    GameStateAfterMove = game_state(PlayerTypes, second_stage, Board, CurrentPlayer, Pieces, Lines, 0),
     next_player(CurrentPlayer, NextPlayer),
     GameStateAfterRemove = game_state(PlayerTypes, second_stage, Board, NextPlayer, Pieces, Lines, 0).
 
