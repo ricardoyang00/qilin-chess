@@ -27,7 +27,7 @@ play :-
 
 % handle_option/1 - Handles the user's menu choice
 handle_option(1) :- start_game(human, human).
-handle_option(2) :- start_game(computer-2, human).
+handle_option(2) :- start_game(human, computer-2).
 handle_option(3) :- display_rules.
 handle_option(0) :- write('Exiting the game.'), nl, !.
 handle_option(_) :- write('Invalid option. Please try again.'), nl, play.
@@ -35,20 +35,20 @@ handle_option(_) :- write('Invalid option. Please try again.'), nl, play.
 % start_game/2 - Starts the game with the given player types
 start_game(Player1Type, Player2Type) :-
     initial_state([Player1Type, Player2Type], GameState),
-    first_stage_loop(GameState).
+    second_stage_loop(GameState).
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [14, 14], [], 0)) :-
+initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], second_stage, Board, black, [11, 11], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
-        a1-red, d1-black, g1-empty, 
-        b2-empty, d2-black, f2-empty, 
-        c3-black, d3-empty, e3-black,
-        a4-red, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
-        c5-red, d5-empty, e5-empty,
-        b6-red, d6-empty, f6-empty, 
-        a7-empty, d7-empty, g7-empty
+        a1-empty, d1-red, g1-empty, 
+        b2-black, d2-black, f2-red, 
+        c3-red, d3-black, e3-black,
+        a4-black, b4-red, c4-black, e4-red, f4-black, g4-red, 
+        c5-red, d5-black, e5-red,
+        b6-black, d6-red, f6-red, 
+        a7-black, d7-red, g7-black
     ].
 
 % get_player_type/3 - Determines the player type based on the current player
@@ -118,27 +118,37 @@ simulate_move(GameState, Move, FinalSimulatedGameState) :-
 % value/3 - Evaluates the desirability of a game state for the current player
 value(game_state(_, first_stage, Board, CurrentPlayer, _, Lines, AllowPressCount), CurrentPlayer, Value) :-
     AllowPressCount > 0,
-    write('AllowPressCount: '), write(AllowPressCount), nl,
+
     % Count lines formed by the current player
     count_lines(Board, CurrentPlayer, CurrentPlayerLines),
-    write('CountLines: '), write(CurrentPlayerLines), nl,
 
     % Count potential lines for the opponent
     next_player(CurrentPlayer, Opponent),
     count_potential_lines(Board, Opponent, OpponentPotentialLines),
-    write('CountPotentialLines: '), write(OpponentPotentialLines), nl,
 
     % Count potential lines for the current player
     % This is a penalty in cases that are to press down because the piece played is considered as an own piece 
     % but actually is to play it on top of opponent's piece so it becomes "pressed" and not considered as potential line for next round
     count_potential_lines(Board, CurrentPlayer, CurrentPlayerPotentialLines),
-    write('CurrentPlayerPotentialLines: '), write(CurrentPlayerPotentialLines), nl,
 
     Value is CurrentPlayerLines * 10 - OpponentPotentialLines * 5 - CurrentPlayerPotentialLines * 2.
 
 value(game_state(_, first_stage, Board, CurrentPlayer, _, Lines, 0), CurrentPlayer, Value) :-
     % Count lines formed by the current player
     count_lines(Board, CurrentPlayer, CurrentPlayerLines),
+
+    % Count potential lines for the opponent
+    next_player(CurrentPlayer, Opponent),
+    count_potential_lines(Board, Opponent, OpponentPotentialLines),
+
+    % Count potential lines for the current player
+    count_potential_lines(Board, CurrentPlayer, CurrentPlayerPotentialLines),
+
+    Value is CurrentPlayerLines * 10 - OpponentPotentialLines * 5 + CurrentPlayerPotentialLines * 2.
+
+value(game_state(_, second_stage, Board, CurrentPlayer, _, Lines, _), CurrentPlayer, Value) :-
+    % Count lines formed by the current player
+    count_lines(Board, CurrentPlayer, CurrentPlayerLines),
     write('CountLines: '), write(CurrentPlayerLines), nl,
 
     % Count potential lines for the opponent
@@ -150,8 +160,16 @@ value(game_state(_, first_stage, Board, CurrentPlayer, _, Lines, 0), CurrentPlay
     count_potential_lines(Board, CurrentPlayer, CurrentPlayerPotentialLines),
     write('CurrentPlayerPotentialLines: '), write(CurrentPlayerPotentialLines), nl,
 
-    Value is CurrentPlayerLines * 10 - OpponentPotentialLines * 5 + CurrentPlayerPotentialLines * 2.
-    
+    % Evaluate mobility for the current player
+    valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, 0), CurrentPlayerMoves),
+    length(CurrentPlayerMoves, CurrentPlayerMobility),
+
+    % Evaluate mobility for the opponent
+    valid_moves(game_state(_, second_stage, Board, Opponent, _, _, 0), OpponentMoves),
+    length(OpponentMoves, OpponentMobility),
+
+    Value is CurrentPlayerLines * 10 - OpponentPotentialLines * 5 + CurrentPlayerPotentialLines * 2 + CurrentPlayerMobility - OpponentMobility.
+
 % count_lines/3 - Counts the number of lines formed by a player
 count_lines(Board, Player, Count) :-
     findall(Line, (
