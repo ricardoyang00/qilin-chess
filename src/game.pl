@@ -190,9 +190,19 @@ count_potential_lines(Board, Player, Count) :-
 
 % potential_line/3 - Checks if a line is a potential line for a player
 potential_line(Board, [Pos1, Pos2, Pos3], Player) :-
-    (memberchk(Pos1-Player, Board), memberchk(Pos2-Player, Board), memberchk(Pos3-empty, Board));
-    (memberchk(Pos1-Player, Board), memberchk(Pos3-Player, Board), memberchk(Pos2-empty, Board));
-    (memberchk(Pos2-Player, Board), memberchk(Pos3-Player, Board), memberchk(Pos1-empty, Board)).
+    memberchk(Pos1-Player, Board),
+    memberchk(Pos2-Player, Board),
+    memberchk(Pos3-empty, Board).
+
+potential_line(Board, [Pos1, Pos2, Pos3], Player) :-
+    memberchk(Pos1-Player, Board),
+    memberchk(Pos3-Player, Board),
+    memberchk(Pos2-empty, Board).
+
+potential_line(Board, [Pos1, Pos2, Pos3], Player) :-
+    memberchk(Pos2-Player, Board),
+    memberchk(Pos3-Player, Board),
+    memberchk(Pos1-empty, Board).
 
 % read_move/3 - Reads a move from the human player based on the game state
 read_move(GameState, Move) :-
