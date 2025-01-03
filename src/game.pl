@@ -35,19 +35,19 @@ handle_option(_) :- write('Invalid option. Please try again.'), nl, play.
 % start_game/2 - Starts the game with the given player types
 start_game(Player1Type, Player2Type) :-
     initial_state([Player1Type, Player2Type], GameState),
-    second_stage_loop(GameState).
+    first_stage_loop(GameState).
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], second_stage, Board, black, [11, 11], [], 0)) :-
+initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [7, 7], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
-        a1-empty, d1-red, g1-empty, 
+        a1-red, d1-red, g1-black, 
         b2-black, d2-black, f2-red, 
-        c3-red, d3-black, e3-black,
+        c3-red, d3-black, e3-empty,
         a4-black, b4-red, c4-black, e4-red, f4-black, g4-red, 
         c5-red, d5-black, e5-red,
-        b6-black, d6-red, f6-red, 
+        b6-black, d6-empty, f6-red, 
         a7-black, d7-red, g7-black
     ].
 
@@ -86,10 +86,36 @@ choose_move(1, _GameState, ValidMoves, Move) :-
     random_select(Move, ValidMoves, _Rest),
     write('Level 1 AI chooses move: '), write(Move), nl.
 
+choose_move(2, game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, Pieces, Lines, AllowRewardMoveCount), ValidMoves, BestMove) :-
+    write('Valid Moves: '), write(ValidMoves), nl,
+    findall(Value-Move,
+        (member(Move, ValidMoves),
+        write('Move: '), write(Move), nl,
+         simulate_remove_choice(game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, Pieces, Lines, AllowRewardMoveCount), Move, SimulatedGameState),
+         value(SimulatedGameState, CurrentPlayer, Value)),   % Evaluate the state
+        MoveValues),
+
+    % Sort the moves by value in ascending order and then reverse to get descending order
+    keysort(MoveValues, SortedMoveValues),
+    reverse(SortedMoveValues, ReversedMoveValues),
+
+    % Extract the best value
+    ReversedMoveValues = [BestValue-_|_],
+
+    % Collect all moves with the best value
+    findall(Move, member(BestValue-Move, ReversedMoveValues), BestMoves),
+
+    % Randomly select one of the best moves
+    random_member(BestMove, BestMoves),
+
+    write('Reversed Value-Move pairs: '), write(ReversedMoveValues), nl,
+    write('Best Moves: '), write(BestMoves), nl,
+    write('Level 2 AI chooses move: '), write(BestMove), nl.
+
 choose_move(2, GameState, ValidMoves, BestMove) :-
     findall(Value-Move,
         (member(Move, ValidMoves),
-         simulate_move(GameState, Move, SimulatedGameState), % Simulate the move (including reward moves)
+         move(GameState, Move, SimulatedGameState), % Simulate the move
          GameState = game_state(_, _, Board, CurrentPlayer, Pieces, Lines, AllowRewardMoveCount),
          value(SimulatedGameState, CurrentPlayer, Value)),   % Evaluate the state
         MoveValues),
@@ -111,11 +137,34 @@ choose_move(2, GameState, ValidMoves, BestMove) :-
     write('Best Moves: '), write(BestMoves), nl,
     write('Level 2 AI chooses move: '), write(BestMove), nl.
 
-% simulate_move/3 - Simulates a move, including any reward moves resulting from lines
-simulate_move(GameState, Move, FinalSimulatedGameState) :-
-    move(GameState, Move, FinalSimulatedGameState).
+% simulate_remove_choice/3 - Simulates the removal of a piece for computer player in transition stage
+simulate_remove_choice(GameState, Position, NewGameState) :-
+    valid_position(Position),
+    GameState = game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
+    update_board(Board, Position, empty, NewBoard),
+    NewGameState = game_state(PlayerTypes, transition_stage, NewBoard, CurrentPlayer, Pieces, Lines, AllowPressCount).
 
 % value/3 - Evaluates the desirability of a game state for the current player
+value(game_state(_, transition_stage, Board, CurrentPlayer, _, Lines, _), CurrentPlayer, Value) :-
+    % Count potential lines for the opponent
+    next_player(CurrentPlayer, Opponent),
+    count_potential_lines(Board, Opponent, OpponentPotentialLines),
+    write('CountPotentialLines: '), write(OpponentPotentialLines), nl,
+
+    % Count potential lines for the current player
+    count_potential_lines(Board, CurrentPlayer, CurrentPlayerPotentialLines),
+    write('CurrentPlayerPotentialLines: '), write(CurrentPlayerPotentialLines), nl,
+
+    % Evaluate mobility for the current player
+    valid_moves(game_state(_, transition_stage, Board, CurrentPlayer, _, _, 0), CurrentPlayerMoves),
+    length(CurrentPlayerMoves, CurrentPlayerMobility),
+
+    % Evaluate mobility for the opponent
+    valid_moves(game_state(_, transition_stage, Board, Opponent, _, _, 0), OpponentMoves),
+    length(OpponentMoves, OpponentMobility),
+
+    Value is - OpponentPotentialLines * 5 + CurrentPlayerPotentialLines * 2 + CurrentPlayerMobility - OpponentMobility.
+
 value(game_state(_, first_stage, Board, CurrentPlayer, _, Lines, AllowPressCount), CurrentPlayer, Value) :-
     AllowPressCount > 0,
 
@@ -480,9 +529,9 @@ choose_piece_to_remove(GameState, computer-Level, NewGameState) :-
 process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
     valid_position(Position),
     memberchk(Position, ValidMoves),
-    GameState = game_state(PlayerTypes, Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
+    GameState = game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
     update_board(Board, Position, empty, NewBoard),
-    NewGameState = game_state(PlayerTypes, Stage, NewBoard, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount).
+    NewGameState = game_state(PlayerTypes, transition_stage, NewBoard, CurrentPlayer, Pieces, Lines, AllowPressCount).
 
 process_remove_choice(_, _, _, _) :-
     write('Invalid choice. Please try again.'), nl,
