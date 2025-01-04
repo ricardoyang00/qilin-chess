@@ -85,7 +85,7 @@ display_rules :-
     write('2. Both sides take turns to move the chess pieces to the empty postitions on the chessboard'), nl,
     write('3. By aligning 3 of its pieces in a straight line (vertical, horizontal or diagonal), a player can remove 1 opposing piece from the board'), nl,
     write('Stage END:'), nl,
-    write('     - The game ends when one player has no pieces left on the board.'), nl.
+    write('     - The game ends when one player has no pieces left on the board.'), nl, nl, nl.
 
 % game_over_display/1 - Displays the text winner is red
 game_over_display(red) :-

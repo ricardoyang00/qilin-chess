@@ -199,3 +199,4 @@ adjacent_position(Pos1, Pos2) :-
     adjacency_list(AdjList),
     member([Pos1 | Rest], AdjList),
     member(Pos2, Rest).
+    

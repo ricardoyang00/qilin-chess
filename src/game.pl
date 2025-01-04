@@ -14,6 +14,13 @@ play :-
     \+ Continue,
     !.
 
+% get_player_type/3 - Determines the player type based on the current player
+get_player_type(CurrentPlayer, PlayerTypes, PlayerType) :-
+    nth1(CurrentPlayerIndex, [red, black], CurrentPlayer),
+    nth1(CurrentPlayerIndex, PlayerTypes, PlayerType).
+
+% //////////////////////////// Start Game ////////////////////////////////
+
 % handle_option/2 - Handles the user's menu choice
 handle_option(1, true) :- 
     nl,
@@ -120,10 +127,9 @@ initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type],
         a7-empty, d7-empty, g7-empty
     ].
 
-% get_player_type/3 - Determines the player type based on the current player
-get_player_type(CurrentPlayer, PlayerTypes, PlayerType) :-
-    nth1(CurrentPlayerIndex, [red, black], CurrentPlayer),
-    nth1(CurrentPlayerIndex, PlayerTypes, PlayerType).
+% /////////////////////////////////////////////////////////////////////
+
+% //////////////////////////// First Stage ////////////////////////////
 
 % first_stage_loop/1 - First stage loop of the game
 first_stage_loop(GameState) :-
@@ -144,6 +150,10 @@ first_stage_loop(GameState) :-
     choose_move(GameState, PlayerType, Move),
     move(GameState, Move, GameStateAfterMove),
     handle_press_down_move(GameStateAfterMove).
+
+% /////////////////////////////////////////////////////////////////////
+
+% //////////////////////////// Choose Move ////////////////////////////
 
 % choose_move/3 - Chooses a move based on the player type
 choose_move(GameState, human, Move) :-
@@ -417,6 +427,10 @@ invalid_move_input :-
     write('Invalid move. Please try again.'), nl, nl,
     fail.
 
+% /////////////////////////////////////////////////////////////////////
+
+% //////////////////////////// General Move Function ////////////////////////////
+
 % move/3 - Validates and executes a move for the first stage
 move(game_state(PlayerTypes, first_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), Move, game_state(PlayerTypes, first_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], NewLines, NewAllowPressCount)) :-
     update_board(Board, Move, CurrentPlayer, NewBoard),
@@ -437,6 +451,10 @@ move(game_state(PlayerTypes, second_stage, Board, CurrentPlayer, [RedCount, Blac
     NewLines = UpdatedLines,
     NewAllowRemoveCount is AllowRemoveCount + NewLineCount,
     !.
+
+% ////////////////////////////////////////////////////////////////////////////////////
+
+% //////////////////////////// First Stage Reward Move ////////////////////////////
 
 % handle_press_down_move/1 - Handles whether to perform a press down move or continue the game loop
 handle_press_down_move(GameStateAfterMove) :-
@@ -501,6 +519,10 @@ process_press_down_move(_GameState, _PressMove, _ValidMoves, _NewGameState) :-
 invalid_press_down_input :-
     write('Invalid press down move. Please try again.'), nl, nl,
     fail.
+
+% ////////////////////////////////////////////////////////////////////////////////////
+
+% //////////////////////////// Game State Update and Outputs to the terminal ////////////////////////////
 
 % update_board/4 - Updates the board with the player's move or maintains the same if no update
 update_board([], _Position, _NewState, []). % Base case: empty board
@@ -602,6 +624,10 @@ all_in_line(Board, [Pos1, Pos2, Pos3], Player) :-
 next_player(red, black).
 next_player(black, red).
 
+% ////////////////////////////////////////////////////////////////////////////////////
+
+% //////////////////////////// First Stage Over -> Transition Stage ////////////////////////////
+
 % first_stage_over/2 - Checks if the stage 1 is over and handles the board
 first_stage_over(GameState, second_stage_loop(NewGameState)) :-
     GameState = game_state(PlayerTypes, _Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
@@ -702,6 +728,10 @@ count_pieces([_Position-Player | Rest], Player, Count) :-
 count_pieces([_ | Rest], Player, Count) :-
     count_pieces(Rest, Player, Count).
 
+% ////////////////////////////////////////////////////////////////////////////////////
+
+% //////////////////////////// Second Stage ////////////////////////////
+
 % second_stage_loop/1 - Second stage loop of the game
 second_stage_loop(GameState) :-
     GameState = game_state(_PlayerTypes, second_stage, _Board, _CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount),
@@ -736,6 +766,10 @@ second_stage_loop(GameState) :-
     handle_remove_move(GameStateAfterMove, GameStateAfterRemove),
     update_lines(GameStateAfterRemove, GameStateAfterLinesUpdate),
     second_stage_loop(GameStateAfterLinesUpdate).
+
+% ////////////////////////////////////////////////////////////////////////////////////
+
+% //////////////////////////// Second Stage Reward Move ////////////////////////////
 
 % handle_remove_move/2 - Handles whether to perform a remove move or continue the game loop
 handle_remove_move(GameStateAfterMove, GameStateAfterRemove) :-
@@ -813,9 +847,14 @@ all_same_player(Board, [Pos1, Pos2, Pos3]) :-
     memberchk(Pos3-Player, Board),
     Player \= empty.
 
+% ////////////////////////////////////////////////////////////////////////////////////
+
+% //////////////////////////// Game Over ////////////////////////////
+
 % game_over/2 - Checks if the game is over and identifies the winner
 game_over(game_state(_PlayerTypes, _Stage, _Board, _CurrentPlayer, [RedCount, _BlackCount], _Lines, _AllowRemoveCount), black) :-
     RedCount = 0.
 game_over(game_state(_PlayerTypes, _Stage, _Board, _CurrentPlayer, [_RedCount, BlackCount], _Lines, _AllowRemoveCount), red) :-
     BlackCount = 0.
 
+% ////////////////////////////////////////////////////////////////////////////////////
