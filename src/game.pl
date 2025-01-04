@@ -110,16 +110,16 @@ start_game(Player1Type, Player2Type) :-
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [18, 18], [], 0)) :-
+initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [7, 7], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
-        a1-empty, d1-empty, g1-empty, 
-        b2-empty, d2-empty, f2-empty, 
-        c3-empty, d3-empty, e3-empty,
-        a4-empty, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
-        c5-empty, d5-empty, e5-empty,
-        b6-empty, d6-empty, f6-empty, 
-        a7-empty, d7-empty, g7-empty
+        a1-red, d1-red, g1-black, 
+        b2-black, d2-black, f2-red, 
+        c3-red, d3-black, e3-empty,
+        a4-black, b4-red, c4-black, e4-red, f4-black, g4-red, 
+        c5-red, d5-black, e5-red,
+        b6-black, d6-empty, f6-red, 
+        a7-black, d7-red, g7-black
     ].
 
 % get_player_type/3 - Determines the player type based on the current player
@@ -133,6 +133,10 @@ first_stage_loop(GameState) :-
     display_game(GameState),
     first_stage_over(GameState, Transition),
     !,
+    nl,
+    write('Press ENTER to proceed to the Move Stage...'), nl,
+    wait_for_enter,
+    nl,
     write('Entering the second stage (Move Stage) ...'), nl,
     Transition.
 
@@ -200,8 +204,8 @@ choose_move(2, GameState, ValidMoves, BestMove) :-
     % Randomly select one of the best moves
     random_member(BestMove, BestMoves),
 
-    % write('Reversed Value-Move pairs: '), write(ReversedMoveValues), nl,
-    % write('Best Moves: '), write(BestMoves), nl, nl,
+    %write('Reversed Value-Move pairs: '), write(ReversedMoveValues), nl, nl,
+    write('Best Move(s): '), write(BestMoves), nl, nl,
 
     write('Level 2 AI chooses move: '), write(BestMove), nl.
 
@@ -379,8 +383,10 @@ valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, 0), ListOfMo
 % process_move/4 - Processes user input as a move
 process_move(forfeit, _, _, game_state(_, _, _, CurrentPlayer, _, _, _)) :-
     next_player(CurrentPlayer, Winner),
-    write('GAME OVER, WINNER IS: '), write(Winner), nl,
-    abort. % Stop the game.
+    write('GAME OVER, WINNER IS: '), write(Winner), nl, nl,
+    write('Press ENTER to get back to the menu...'), nl,
+    wait_for_enter,
+    play.
 
 process_move(Move, ValidMoves, Move, _GameState) :-
     atom(Move),
@@ -467,8 +473,10 @@ press_down(GameState, computer-Level, NewGameState) :-
 % process_press_down_move/4 - Processes the press down move based on its validity
 process_press_down_move(game_state(_, _, _, CurrentPlayer, _, _, _), forfeit, _, _) :-
     next_player(CurrentPlayer, Winner),
-    write('GAME OVER, WINNER IS: '), write(Winner), nl,
-    abort. % Stop the game.
+    write('GAME OVER, WINNER IS: '), write(Winner), nl, nl,
+    write('Press ENTER to get back to the menu...'), nl,
+    wait_for_enter,
+    play.
 
 process_press_down_move(GameState, PressMove, ValidMoves, NewGameState) :-
     atom(PressMove),
@@ -553,18 +561,18 @@ check_lines_formed(Simulation, PlayerType, second_stage, Move, Board, Player, Ex
     !.
 
 % print_new_lines/3 - Handles the printing of new lines if any are formed
+print_new_lines(_NewLines, _PlayerType, true) :- !.
+
 print_new_lines([], human, _Simulation) :- !. % Do nothing
 
-print_new_lines([], computer-Level, true) :- !.
+print_new_lines(NewLines, human, false) :-
+    nl,
+    write('New line(s) formed: '), write(NewLines), nl.
 
 print_new_lines([], computer-Level, false) :-
     nl,
     write('Press ENTER to continue...'), nl,
     wait_for_enter.
-
-print_new_lines(NewLines, human, false) :-
-    nl,
-    write('New line(s) formed: '), write(NewLines), nl.
 
 print_new_lines(NewLines, computer-Level, false) :-
     nl,
@@ -588,7 +596,7 @@ next_player(black, red).
 first_stage_over(GameState, second_stage_loop(NewGameState)) :-
     GameState = game_state(PlayerTypes, Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
     \+ memberchk(_-empty, Board),
-    write('Play Stage complete. Transitioning game to Move Stage.'), nl,
+    write('Play Stage complete. Checking for pressed pieces...'), nl,
     
     % Replace pressed pieces with empty ones using recursion
     remove_all_pressed(Board, BoardWithoutPressed, PressedFound),
@@ -598,13 +606,13 @@ first_stage_over(GameState, second_stage_loop(NewGameState)) :-
 % handle_pressed_pieces/4 - Handles the cases based on whether pressed pieces were found
 handle_pressed_pieces(false, game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), BoardWithoutPressed, NewGameState) :-
     GameState = game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
-    write('No pressed pieces. Each side will remove one piece.'), nl,
+    write('No pressed pieces. Each side will remove one piece.'), nl, nl,
     get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
     choose_piece_to_remove(GameState, PlayerType, GameStateAfterRedRemoval),
-    GameStateAfterRedRemoval = game_state(PlayerTypes, _, BoardAfterRedRemoval, CurrentPlayer, _, _, _),
+    GameStateAfterRedRemoval = game_state(PlayerTypes, transition_stage, BoardAfterRedRemoval, CurrentPlayer, _, _, _),
     count_pieces(BoardAfterRedRemoval, red, NewRedCount),
     next_player(CurrentPlayer, NextPlayer),
-    TempGameState = game_state(PlayerTypes, _, BoardAfterRedRemoval, NextPlayer, _, _, _),
+    TempGameState = game_state(PlayerTypes, transition_stage, BoardAfterRedRemoval, NextPlayer, _, _, _),
     display_game(TempGameState),
     get_player_type(NextPlayer, PlayerTypes, NextPlayerType),
     choose_piece_to_remove(TempGameState, NextPlayerType, GameStateAfterBlackRemoval),
@@ -653,8 +661,10 @@ choose_piece_to_remove(GameState, computer-Level, NewGameState) :-
 % process_remove_choice/4 - Processes the remove choice based on its validity
 process_remove_choice(game_state(_, _, _, CurrentPlayer, _, _, _), forfeit, _, _) :-
     next_player(CurrentPlayer, Winner),
-    write('GAME OVER, WINNER IS: '), write(Winner), nl,
-    abort. % Stop the game.
+    write('GAME OVER, WINNER IS: '), write(Winner), nl, nl,
+    write('Press ENTER to get back to the menu...'), nl,
+    wait_for_enter,
+    play.
 
 process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
     atom(Position),
@@ -688,15 +698,21 @@ second_stage_loop(GameState) :-
     display_game(GameState),
     game_over(GameState, Winner),
     !,
-    write('GAME OVER, WINNER IS: '), write(Winner), nl.
+    write('GAME OVER, WINNER IS: '), write(Winner), nl, nl,
+    write('Press ENTER to get back to the menu...'), nl,
+    wait_for_enter,
+    play.
 
 second_stage_loop(GameState) :-
     GameState = game_state(_, _, _, CurrentPlayer, _, _, _),
     valid_moves(GameState, []),  % No valid moves left
-    write('Valid Moves: []'), nl,
-    write('YOU HAVE NO VALID MOVES LEFT'), nl,
+    write('Valid Moves: []'), nl, nl,
+    write('YOU HAVE NO VALID MOVES LEFT'), nl, nl,
     next_player(CurrentPlayer, Winner),
-    write('GAME OVER, WINNER IS: '), write(Winner), nl.
+    write('GAME OVER, WINNER IS: '), write(Winner), nl, nl,
+    write('Press ENTER to get back to the menu...'), nl,
+    wait_for_enter,
+    play.
     
 second_stage_loop(GameState) :-
     GameState = game_state(PlayerTypes, second_stage, Board, CurrentPlayer, Pieces, Lines, AllowRemoveCount),
@@ -748,8 +764,10 @@ remove(GameState, computer-Level, NewGameState) :-
 % process_remove_move/4 - Processes the remove move based on its validity
 process_remove_move(game_state(_, _, _, CurrentPlayer, _, _, _), forfeit, _, _) :-
     next_player(CurrentPlayer, Winner),
-    write('GAME OVER, WINNER IS: '), write(Winner), nl,
-    abort. % Stop the game.
+    write('GAME OVER, WINNER IS: '), write(Winner), nl, nl,
+    write('Press ENTER to get back to the menu...'), nl,
+    wait_for_enter,
+    play.
 
 process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState) :-
     atom(RemoveMove),
@@ -788,3 +806,4 @@ game_over(game_state(_PlayerTypes, _Stage, _Board, _CurrentPlayer, [RedCount, _B
     RedCount = 0.
 game_over(game_state(_PlayerTypes, _Stage, _Board, _CurrentPlayer, [_RedCount, BlackCount], _Lines, _AllowRemoveCount), red) :-
     BlackCount = 0.
+
