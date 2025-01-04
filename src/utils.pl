@@ -26,3 +26,10 @@ test_all_colors :-
     write_colored_text(magenta, 'This is magenta text'),
     write_colored_text(cyan, 'This is cyan text'),
     write_colored_text(white, 'This is white text').
+
+% validate_input/2 - Validates that the input is an instantiated atom and returns it as output
+validate_input(Input, Output) :-
+    % Ensure Input is instantiated and is an atom
+    nonvar(Input),                     % Input must be instantiated
+    atom(Input),                       % Input must be an atom
+    Output = Input.                    % Output is the same as Input (valid)

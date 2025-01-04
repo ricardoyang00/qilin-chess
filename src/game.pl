@@ -405,7 +405,10 @@ valid_moves(game_state(_PlayerTypes, second_stage, Board, CurrentPlayer, _Pieces
     sort(UnsortedMoves, ListOfMoves).
 
 % process_move/4 - Processes user input as a move, if user inputs forfeit. game ends
-process_move(forfeit, _ValidMoves, _Move, game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRewardMoveCount)) :-
+process_move(Input, _ValidMoves, _Move, game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRewardMoveCount)) :-
+    validate_input(Input, ValidatedInput),
+    ValidatedInput = forfeit,
+
     next_player(CurrentPlayer, Winner),
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
@@ -413,28 +416,35 @@ process_move(forfeit, _ValidMoves, _Move, game_state(_PlayerTypes, _Stage, _Boar
     !,
     play.
 
-process_move(save, _ValidMoves, _Move, GameState) :-
+process_move(Input, _ValidMoves, _Move, GameState) :-
+    validate_input(Input, ValidatedInput),
+    ValidatedInput = save,
+
     save_game(GameState),
     !,
     play.
 
 % process_move/4 - Processes user input as a move of the type a1
-process_move(Move, ValidMoves, Move, _GameState) :-
-    atom(Move),
-    atom_length(Move, 2),
-    valid_position(Move),
-    memberchk(Move, ValidMoves),
+process_move(Input, ValidMoves, Move, _GameState) :-
+    validate_input(Input, ValidatedInput),
+    atom(ValidatedInput),
+    atom_length(ValidatedInput, 2),
+    valid_position(ValidatedInput),
+    memberchk(ValidatedInput, ValidMoves),
+    Move = ValidatedInput,
     !.
 
 % process_move/4 - Processes user input as a move of the type a1a4, move from a1 to a4
-process_move(Move, ValidMoves, Move, _GameState) :-
-    atom(Move),
-    atom_length(Move, 4),
-    sub_atom(Move, 0, 2, _, From),
-    sub_atom(Move, 2, 2, 0, To),
+process_move(Input, ValidMoves, Move, _GameState) :-
+    validate_input(Input, ValidatedInput),
+    atom(ValidatedInput),
+    atom_length(ValidatedInput, 4),
+    sub_atom(ValidatedInput, 0, 2, _, From),
+    sub_atom(ValidatedInput, 2, 2, 0, To),
     valid_position(From),
     valid_position(To),
-    memberchk(Move, ValidMoves),
+    memberchk(ValidatedInput, ValidMoves),
+    Move = ValidatedInput,
     !.
 
 process_move(_Input, _ValidMoves, _Move, _GameState) :-
@@ -511,7 +521,10 @@ press_down(GameState, computer-Level, NewGameState) :-
     !.
 
 % process_press_down_move/4 - Ends the game if user inputs forfeit.
-process_press_down_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowPressCount), forfeit, _ValidMoves, _NewGameState) :-
+process_press_down_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowPressCount), Input, _ValidMoves, _NewGameState) :-
+    validate_input(Input, ValidatedInput),
+    ValidatedInput = forfeit,
+
     next_player(CurrentPlayer, Winner),
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
@@ -519,14 +532,17 @@ process_press_down_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, 
     !,
     play.
 
-process_press_down_move(_GameState, save, _ValidMoves, _NewGameState) :-
+process_press_down_move(_GameState, Input, _ValidMoves, _NewGameState) :-
+    validate_input(Input, ValidatedInput),
+    ValidatedInput = save,
+
     write('Saving the game is not supported in the current state.'), nl, nl,
     !,
     fail.
 
 % process_press_down_move/4 - Processes the press down move based on its validity
-process_press_down_move(GameState, PressMove, ValidMoves, NewGameState) :-
-    atom(PressMove),
+process_press_down_move(GameState, Input, ValidMoves, NewGameState) :-
+    validate_input(Input, PressMove),
     valid_position(PressMove),
     memberchk(PressMove, ValidMoves),
     GameState = game_state(PlayerTypes, first_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
@@ -719,7 +735,10 @@ choose_piece_to_remove(GameState, computer-Level, NewGameState) :-
     !.
 
 % process_remove_choice/4 - Processes the remove choice based on its validity
-process_remove_choice(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount), forfeit, _ValidMoves, _NewGameState) :-
+process_remove_choice(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount), Input, _ValidMoves, _NewGameState) :-
+    validate_input(Input, ValidatedInput),
+    ValidatedInput = forfeit,
+
     next_player(CurrentPlayer, Winner),
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
@@ -727,13 +746,16 @@ process_remove_choice(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _P
     !,
     play.
 
-process_remove_choice(_GameState, save, _ValidMoves, _NewGameState) :-
+process_remove_choice(_GameState, Input, _ValidMoves, _NewGameState) :-
+    validate_input(Input, ValidatedInput),
+    ValidatedInput = save,
+
     write('Saving the game is not supported in the transition state.'), nl, nl,
     !,
     fail.
 
-process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
-    atom(Position),
+process_remove_choice(GameState, Input, ValidMoves, NewGameState) :-
+    validate_input(Input, Position),
     valid_position(Position),
     memberchk(Position, ValidMoves),
     GameState = game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
@@ -840,7 +862,10 @@ remove(GameState, computer-Level, NewGameState) :-
     !.
 
 % process_remove_move/4 - Processes the remove move based on its validity
-process_remove_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount), forfeit, _ValidMoves, _NewGameState) :-
+process_remove_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount), Input, _ValidMoves, _NewGameState) :-
+    validate_input(Input, ValidatedInput),
+    ValidatedInput = forfeit,
+    
     next_player(CurrentPlayer, Winner),
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
@@ -848,13 +873,16 @@ process_remove_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pie
     !,
     play.
 
-process_remove_move(_GameState, save, _ValidMoves, _NewGameState) :-
+process_remove_move(_GameState, Input, _ValidMoves, _NewGameState) :-
+    validate_input(Input, ValidatedInput),
+    ValidatedInput = save,
+
     write('Saving the game is not supported in the current state.'), nl, nl,
     !,
     fail.
 
-process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState) :-
-    atom(RemoveMove),
+process_remove_move(GameState, Input, ValidMoves, NewGameState) :-
+    validate_input(Input, RemoveMove),
     valid_position(RemoveMove),
     memberchk(RemoveMove, ValidMoves),
     GameState = game_state(PlayerTypes, second_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowRemoveCount),
@@ -864,7 +892,7 @@ process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState) :-
     NewAllowRemoveCount is AllowRemoveCount - 1,
     NewGameState = game_state(PlayerTypes, second_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], Lines, NewAllowRemoveCount).
 
-process_remove_move(_, _, _, _) :-
+process_remove_move(_GameState, _RemoveMove, _ValidMoves, _NewGameState) :-
     invalid_remove_input.
 
 % invalid_remove_input/0 - Handles invalid remove input
