@@ -20,17 +20,43 @@ display_board(game_state(PlayerTypes, Stage, Board, CurrentPlayer, [RedCount, Bl
 
 % play/0 - Main predicate to start the game and display the menu
 play :- 
+    repeat,
     display_menu,
-    read(Option),
+    catch(read(UserInput), _, invalid_menu_input),
     skip_line,
-    handle_option(Option).
+    handle_option(UserInput, Continue),
+    continue_play_loop(Continue).
 
-% handle_option/1 - Handles the user's menu choice
-handle_option(1) :- start_game(human, human).
-handle_option(2) :- start_game(human, computer-2).
-handle_option(3) :- display_rules.
-handle_option(0) :- write('Exiting the game.'), nl, !.
-handle_option(_) :- write('Invalid option. Please try again.'), nl, play.
+% continue_play_loop/1 - Determines whether to continue the play loop
+continue_play_loop(false) :- !.
+continue_play_loop(true) :- fail.
+
+% handle_option/2 - Handles the user's menu choice
+handle_option(1, true) :- 
+    write('Starting Human vs Human game...'), nl,
+    start_game(human, human),
+    fail.
+
+handle_option(2, true) :- 
+    write('Starting Human vs Computer game...'), nl,
+    start_game(human, computer-2),
+    fail.
+
+handle_option(3, true) :- 
+    display_rules,
+    fail.
+
+handle_option(0, false) :-
+    write('Exiting the game. Goodbye!'), nl.
+
+handle_option(_, true) :-
+    write('Invalid option. Please choose a valid option from 0-3.'), nl,
+    fail.
+
+% invalid_menu_input/0 - Handles invalid menu input
+invalid_menu_input :-
+    write('Invalid input. Please enter a number between 0 and 3.'), nl,
+    fail.
 
 % start_game/2 - Starts the game with the given player types
 start_game(Player1Type, Player2Type) :-
