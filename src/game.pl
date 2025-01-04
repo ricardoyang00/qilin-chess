@@ -383,7 +383,7 @@ valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, 0), ListOfMo
 % process_move/4 - Processes user input as a move
 process_move(forfeit, _, _, game_state(_, _, _, CurrentPlayer, _, _, _)) :-
     next_player(CurrentPlayer, Winner),
-    write('GAME OVER, WINNER IS: '), write(Winner), nl, nl,
+    game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
     play.
@@ -473,7 +473,7 @@ press_down(GameState, computer-Level, NewGameState) :-
 % process_press_down_move/4 - Processes the press down move based on its validity
 process_press_down_move(game_state(_, _, _, CurrentPlayer, _, _, _), forfeit, _, _) :-
     next_player(CurrentPlayer, Winner),
-    write('GAME OVER, WINNER IS: '), write(Winner), nl, nl,
+    game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
     play.
@@ -661,7 +661,7 @@ choose_piece_to_remove(GameState, computer-Level, NewGameState) :-
 % process_remove_choice/4 - Processes the remove choice based on its validity
 process_remove_choice(game_state(_, _, _, CurrentPlayer, _, _, _), forfeit, _, _) :-
     next_player(CurrentPlayer, Winner),
-    write('GAME OVER, WINNER IS: '), write(Winner), nl, nl,
+    game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
     play.
@@ -699,6 +699,7 @@ second_stage_loop(GameState) :-
     game_over(GameState, Winner),
     !,
     write('GAME OVER, WINNER IS: '), write(Winner), nl, nl,
+    game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
     play.
@@ -709,7 +710,7 @@ second_stage_loop(GameState) :-
     write('Valid Moves: []'), nl, nl,
     write('YOU HAVE NO VALID MOVES LEFT'), nl, nl,
     next_player(CurrentPlayer, Winner),
-    write('GAME OVER, WINNER IS: '), write(Winner), nl, nl,
+    game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
     play.
@@ -764,7 +765,7 @@ remove(GameState, computer-Level, NewGameState) :-
 % process_remove_move/4 - Processes the remove move based on its validity
 process_remove_move(game_state(_, _, _, CurrentPlayer, _, _, _), forfeit, _, _) :-
     next_player(CurrentPlayer, Winner),
-    write('GAME OVER, WINNER IS: '), write(Winner), nl, nl,
+    game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
     play.
