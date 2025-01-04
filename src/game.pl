@@ -40,7 +40,8 @@ handle_option(3) :-
     display_rules,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
-    fail.
+    !,
+    fail.   % Fail to continue the repeat play loop
 
 handle_option(0) :-
     nl,
