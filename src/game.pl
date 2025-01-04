@@ -79,12 +79,12 @@ handle_difficulty(2) :-
 
 handle_difficulty(_) :-
     write('Invalid option. Please choose a valid option from 0-2.'), nl,
-    handle_option(2, true).
+    handle_option(2).
     
 % handle_color/2 - Handles the player selection
 % back to select difficulty
 handle_color(0, _Level) :-
-    handle_option(2, true).
+    handle_option(2).
 
 handle_color(1, Level) :-
     nl,
