@@ -46,7 +46,9 @@ handle_option(3) :-
 handle_option(0) :-
     nl,
     write('Exiting the game. Goodbye!'), nl,
-    logo.
+    logo,
+    !,
+    halt.
 
 handle_option(_) :-
     write('Invalid option. Please choose a valid option from 0-3.'), nl,
@@ -399,6 +401,7 @@ process_move(forfeit, _ValidMoves, _Move, game_state(_PlayerTypes, _Stage, _Boar
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
+    !,
     play.
 
 % process_move/4 - Processes user input as a move of the type a1
@@ -499,6 +502,7 @@ process_press_down_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, 
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
+    !,
     play.
 
 % process_press_down_move/4 - Processes the press down move based on its validity
@@ -701,6 +705,7 @@ process_remove_choice(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _P
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
+    !,
     play.
 
 process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
@@ -755,6 +760,7 @@ second_stage_loop(GameState) :-
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
+    !,
     play.
     
 second_stage_loop(GameState) :-
@@ -815,6 +821,7 @@ process_remove_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pie
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
+    !,
     play.
 
 process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState) :-
