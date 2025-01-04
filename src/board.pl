@@ -31,7 +31,7 @@ display_game(game_state(PlayerTypes, Stage, Board, CurrentPlayer, Pieces, Lines,
     nl,
     write('   a       b        c       d       e        f       g   '), 
     nl, nl,
-    print_current_player(CurrentPlayer).
+    draw_current_player_box(CurrentPlayer).
 
 % print_cell/2 - Helper predicate to print a cell's content
 print_cell(Board, Position) :-
@@ -50,14 +50,73 @@ print_cell_content(black) :-
 print_cell_content(pressed) :-
     write_colored_text(magenta, 'P').
 
-% print_current_player/1 - Prints the current player
-print_current_player(red) :-
-    write('Current Player: '),
-    write_colored_text(red, 'Red'), nl.
+% draw_current_player_box/1 - Draws the box for the current player
+draw_current_player_box(CurrentPlayer) :-
+    put_code(9556), % Draw the top-left corner
+    draw_horizontal_line(52), % Draw the horizontal line (10 times in this example)
+    put_code(9559), nl, % Draw the top-right corner
+    draw_vertical_lines(3, CurrentPlayer), % Draw the vertical lines
+    put_code(9562), % Draw the bottom-left corner
+    draw_horizontal_line(52), % Draw the horizontal line
+    put_code(9565), nl. % Draw the bottom-right corner
 
-print_current_player(black) :-
-    write('Current Player: '),
-    write_colored_text(green, 'Black'), nl.
+% draw_horizontal_line/1 - Draws a horizontal line with the specified length
+draw_horizontal_line(0) :- !.
+draw_horizontal_line(N) :-
+    N > 0,
+    put_code(9552),
+    N1 is N - 1,
+    draw_horizontal_line(N1).
+
+% draw_vertical_lines/2 - Draws vertical lines with the specified height and prints the current player in the middle
+draw_vertical_lines(Height, CurrentPlayer) :-
+    Middle is (Height + 1) // 2,
+    draw_vertical_lines(Height, CurrentPlayer, Middle).
+
+draw_vertical_lines(0, _, _) :- !.
+
+draw_vertical_lines(N, CurrentPlayer, Middle) :-
+    N > 0,
+    N = Middle,
+    draw_middle_line(CurrentPlayer),
+    N1 is N - 1,
+    draw_vertical_lines(N1, CurrentPlayer, Middle).
+
+draw_vertical_lines(N, CurrentPlayer, Middle) :-
+    N > 0,
+    N \= Middle,
+    draw_regular_line,
+    N1 is N - 1,
+    draw_vertical_lines(N1, CurrentPlayer, Middle).
+
+% draw_middle_line/1 - Draws the middle line with the current player
+draw_middle_line(red) :-
+    put_code(9553), % Draw the left vertical line
+    draw_spaces(15),
+    write('Current Player => '), write_colored_text(red, 'Red'),
+    draw_spaces(16),
+    put_code(9553), nl. % Draw the right vertical line
+
+draw_middle_line(black) :-
+    put_code(9553), % Draw the left vertical line
+    draw_spaces(14),
+    write('Current Player => '), write_colored_text(green, 'Black'),
+    draw_spaces(15),
+    put_code(9553), nl. % Draw the right vertical line
+
+% draw_regular_line/0 - Draws a regular line without the current player
+draw_regular_line :-
+    put_code(9553), % Draw the left vertical line
+    draw_spaces(52),
+    put_code(9553), nl. % Draw the right vertical line
+
+% draw_spaces/1 - Draws a specified number of spaces
+draw_spaces(0) :- !.
+draw_spaces(N) :-
+    N > 0,
+    write(' '),
+    N1 is N - 1,
+    draw_spaces(N1).
 
 % valid_position/1 - Verifies if the position input is valid
 valid_position(Position) :-
