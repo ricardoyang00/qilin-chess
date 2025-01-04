@@ -31,5 +31,11 @@ test_all_colors :-
 validate_input(Input, Output) :-
     % Ensure Input is instantiated and is an atom
     nonvar(Input),                     % Input must be instantiated
-    atom(Input),                       % Input must be an atom
+    validate_atom_or_number(Input),    % Input must be an atom or number
     Output = Input.                    % Output is the same as Input (valid)
+
+% validate_atom_or_number/1 - Ensures the input is an atom or a number
+validate_atom_or_number(Input) :-
+    atom(Input).
+validate_atom_or_number(Input) :-
+    number(Input).

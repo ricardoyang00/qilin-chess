@@ -13,7 +13,8 @@ play :-
     display_menu,
     catch(read(UserInput), _, invalid_menu_input),
     skip_line,
-    handle_option(UserInput),
+    validate_input(UserInput, ValidatedInput),
+    handle_option(ValidatedInput),
     !.
 
 % get_player_type/3 - Determines the player type based on the current player
