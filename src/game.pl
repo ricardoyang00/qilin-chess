@@ -25,11 +25,8 @@ play :-
     catch(read(UserInput), _, invalid_menu_input),
     skip_line,
     handle_option(UserInput, Continue),
-    continue_play_loop(Continue).
-
-% continue_play_loop/1 - Determines whether to continue the play loop
-continue_play_loop(false) :- !.
-continue_play_loop(true) :- fail.
+    \+ Continue,
+    !.
 
 % handle_option/2 - Handles the user's menu choice
 handle_option(1, true) :- 
@@ -287,7 +284,7 @@ read_move(GameState, Move) :-
     write('Enter your move'), nl,
     catch(read(UserInput), _, invalid_move_input),
     skip_line,
-    process_move(UserInput, ValidMoves, Move),
+    process_move(UserInput, ValidMoves, Move, GameState),
     !.
 
 % valid_moves/2 - Returns a list of all possible valid moves
@@ -316,15 +313,20 @@ valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, 0), ListOfMo
     ), UnsortedMoves),
     sort(UnsortedMoves, ListOfMoves).
 
-% process_move/3 - Processes user input as a move
-process_move(Move, ValidMoves, Move) :-
+% process_move/4 - Processes user input as a move
+process_move(forfeit, _, _, game_state(_, _, _, CurrentPlayer, _, _, _)) :-
+    next_player(CurrentPlayer, Winner),
+    write('GAME OVER, WINNER IS: '), write(Winner), nl,
+    abort. % Stop the game.
+
+process_move(Move, ValidMoves, Move, _GameState) :-
     atom(Move),
     atom_length(Move, 2),
     valid_position(Move),
     memberchk(Move, ValidMoves),
     !.
 
-process_move(Move, ValidMoves, Move) :-
+process_move(Move, ValidMoves, Move, _GameState) :-
     atom(Move),
     atom_length(Move, 4),
     sub_atom(Move, 0, 2, _, From),
@@ -334,8 +336,7 @@ process_move(Move, ValidMoves, Move) :-
     memberchk(Move, ValidMoves),
     !.
 
-
-process_move(_, _, _) :-
+process_move(_, _, _, _GameState) :-
     invalid_move_input.
 
 % invalid_move_input/0 - Handles invalid move input
@@ -397,6 +398,11 @@ press_down(GameState, computer-Level, NewGameState) :-
     !.
 
 % process_press_down_move/4 - Processes the press down move based on its validity
+process_press_down_move(game_state(_, _, _, CurrentPlayer, _, _, _), forfeit, _, _) :-
+    next_player(CurrentPlayer, Winner),
+    write('GAME OVER, WINNER IS: '), write(Winner), nl,
+    abort. % Stop the game.
+
 process_press_down_move(GameState, PressMove, ValidMoves, NewGameState) :-
     atom(PressMove),
     valid_position(PressMove),
@@ -566,6 +572,11 @@ choose_piece_to_remove(GameState, computer-Level, NewGameState) :-
     !.
 
 % process_remove_choice/4 - Processes the remove choice based on its validity
+process_remove_choice(game_state(_, _, _, CurrentPlayer, _, _, _), forfeit, _, _) :-
+    next_player(CurrentPlayer, Winner),
+    write('GAME OVER, WINNER IS: '), write(Winner), nl,
+    abort. % Stop the game.
+
 process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
     atom(Position),
     valid_position(Position),
@@ -655,6 +666,11 @@ remove(GameState, computer-Level, NewGameState) :-
     !.
 
 % process_remove_move/4 - Processes the remove move based on its validity
+process_remove_move(game_state(_, _, _, CurrentPlayer, _, _, _), forfeit, _, _) :-
+    next_player(CurrentPlayer, Winner),
+    write('GAME OVER, WINNER IS: '), write(Winner), nl,
+    abort. % Stop the game.
+
 process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState) :-
     atom(RemoveMove),
     valid_position(RemoveMove),
