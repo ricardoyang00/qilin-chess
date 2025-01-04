@@ -98,7 +98,14 @@ draw_vertical_lines(N, Text, Middle) :-
 
 draw_vertical_lines(N, Text, Middle) :-
     N > 0,
-    N \= Middle,
+    N < Middle,   % This ensures N is not equal to Middle and it's less than Middle
+    draw_regular_line,
+    N1 is N - 1,
+    draw_vertical_lines(N1, Text, Middle).
+
+draw_vertical_lines(N, Text, Middle) :-
+    N > 0,
+    N > Middle,   % This handles the case where N is greater than Middle
     draw_regular_line,
     N1 is N - 1,
     draw_vertical_lines(N1, Text, Middle).

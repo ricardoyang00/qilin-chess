@@ -10,8 +10,7 @@ play :-
     display_menu,
     catch(read(UserInput), _, invalid_menu_input),
     skip_line,
-    handle_option(UserInput, Continue),
-    \+ Continue,
+    handle_option(UserInput),
     !.
 
 % get_player_type/3 - Determines the player type based on the current player
@@ -22,13 +21,13 @@ get_player_type(CurrentPlayer, PlayerTypes, PlayerType) :-
 % //////////////////////////// Start Game ////////////////////////////////
 
 % handle_option/2 - Handles the user's menu choice
-handle_option(1, true) :- 
+handle_option(1) :- 
     nl,
     write('Starting Human vs Human game...'), nl,
     start_game(human, human),
     fail.
 
-handle_option(2, true) :- 
+handle_option(2) :- 
     nl,
     display_difficulty_selection,
     catch(read(Difficulty), _, invalid_menu_input),
@@ -36,19 +35,19 @@ handle_option(2, true) :-
     handle_difficulty(Difficulty),
     fail.
 
-handle_option(3, true) :- 
+handle_option(3) :- 
     nl,
     display_rules,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
-    play.
+    fail.
 
-handle_option(0, false) :-
+handle_option(0) :-
     nl,
     write('Exiting the game. Goodbye!'), nl,
     logo.
 
-handle_option(_, true) :-
+handle_option(_) :-
     write('Invalid option. Please choose a valid option from 0-3.'), nl,
     fail.
 
@@ -80,8 +79,9 @@ handle_difficulty(_) :-
     handle_option(2, true).
     
 % handle_color/2 - Handles the player selection
-handle_color(0, Level) :-
-    handle_difficulty(Level).
+% back to select difficulty
+handle_color(0, _Level) :-
+    handle_option(2, true).
 
 handle_color(1, Level) :-
     nl,
@@ -213,7 +213,7 @@ choose_move(2, GameState, ValidMoves, BestMove) :-
     random_member(BestMove, BestMoves),
 
     % write('Reversed Value-Move pairs: '), write(ReversedMoveValues), nl, nl,
-    write('Best Move(s): '), write(BestMoves), nl, nl,
+    % write('Best Move(s): '), write(BestMoves), nl, nl,
 
     write('Level 2 AI chooses move: '), write(BestMove), nl.
 
@@ -759,7 +759,8 @@ second_stage_loop(GameState) :-
 second_stage_loop(GameState) :-
     GameState = game_state(PlayerTypes, second_stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount),
     valid_moves(GameState, ValidMoves),
-    ValidMoves \= [],
+    length(ValidMoves, ValidMovesLength),
+    ValidMovesLength > 0,
     get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
     choose_move(GameState, PlayerType, Move),
     move(GameState, Move, GameStateAfterMove),
@@ -845,7 +846,9 @@ all_same_player(Board, [Pos1, Pos2, Pos3]) :-
     memberchk(Pos1-Player, Board),
     memberchk(Pos2-Player, Board),
     memberchk(Pos3-Player, Board),
-    Player \= empty.
+    \+ memberchk(Pos1-empty, Board),
+    \+ memberchk(Pos2-empty, Board),
+    \+ memberchk(Pos3-empty, Board).
 
 % ////////////////////////////////////////////////////////////////////////////////////
 
