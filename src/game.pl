@@ -110,16 +110,16 @@ start_game(Player1Type, Player2Type) :-
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [6, 7], [[a1, b2, c3]], 0)) :-
+initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [18, 18], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
-        a1-red, d1-pressed, g1-black, 
-        b2-red, d2-black, f2-black, 
-        c3-red, d3-black, e3-empty,
-        a4-red, b4-red, c4-black, e4-red, f4-black, g4-red, 
-        c5-red, d5-black, e5-red,
-        b6-black, d6-empty, f6-red, 
-        a7-black, d7-red, g7-black
+        a1-empty, d1-empty, g1-empty, 
+        b2-empty, d2-empty, f2-empty, 
+        c3-empty, d3-empty, e3-empty,
+        a4-empty, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
+        c5-empty, d5-empty, e5-empty,
+        b6-empty, d6-empty, f6-empty, 
+        a7-empty, d7-empty, g7-empty
     ].
 
 % get_player_type/3 - Determines the player type based on the current player
@@ -182,7 +182,7 @@ choose_move(2, game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, P
 choose_move(2, GameState, ValidMoves, BestMove) :-
     findall(Value-Move,
         (member(Move, ValidMoves),
-         move(GameState, Move, SimulatedGameState), % Simulate the move
+         simulate_move(GameState, Move, SimulatedGameState), % Simulate the move
          GameState = game_state(_, _, Board, CurrentPlayer, Pieces, Lines, AllowRewardMoveCount),
          value(SimulatedGameState, CurrentPlayer, Value)),   % Evaluate the state
         MoveValues),
@@ -200,8 +200,9 @@ choose_move(2, GameState, ValidMoves, BestMove) :-
     % Randomly select one of the best moves
     random_member(BestMove, BestMoves),
 
-    write('Reversed Value-Move pairs: '), write(ReversedMoveValues), nl,
-    write('Best Moves: '), write(BestMoves), nl,
+    % write('Reversed Value-Move pairs: '), write(ReversedMoveValues), nl,
+    % write('Best Moves: '), write(BestMoves), nl, nl,
+
     write('Level 2 AI chooses move: '), write(BestMove), nl.
 
 % simulate_remove_choice/3 - Simulates the removal of a piece for computer player in transition stage
@@ -210,6 +211,27 @@ simulate_remove_choice(GameState, Position, NewGameState) :-
     GameState = game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
     update_board(Board, Position, empty, NewBoard),
     NewGameState = game_state(PlayerTypes, transition_stage, NewBoard, CurrentPlayer, Pieces, Lines, AllowPressCount).
+
+% simulate_move/3 - Simulation that validates and executes a move for the first stage
+simulate_move(game_state(PlayerTypes, first_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), Move, game_state(PlayerTypes, first_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], NewLines, NewAllowPressCount)) :-
+    update_board(Board, Move, CurrentPlayer, NewBoard),
+    decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
+    get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
+    check_lines_formed(true, PlayerType, first_stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
+    NewLines = UpdatedLines,
+    NewAllowPressCount is AllowPressCount + NewLineCount,
+    !.
+
+% simulate_move/3 - Simulation that validates and executes a move for the second stage
+simulate_move(game_state(PlayerTypes, second_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowRemoveCount), Move, game_state(PlayerTypes, second_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], NewLines, NewAllowRemoveCount)) :-
+    update_board(Board, Move, CurrentPlayer, NewBoard),
+    NewRedCount = RedCount,
+    NewBlackCount = BlackCount,
+    get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
+    check_lines_formed(true, PlayerType, second_stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
+    NewLines = UpdatedLines,
+    NewAllowRemoveCount is AllowRemoveCount + NewLineCount,
+    !.
 
 % value/3 - Evaluates the desirability of a game state for the current player
 value(game_state(_, transition_stage, Board, CurrentPlayer, _, Lines, _), CurrentPlayer, Value) :-
@@ -390,7 +412,7 @@ move(game_state(PlayerTypes, first_stage, Board, CurrentPlayer, [RedCount, Black
     update_board(Board, Move, CurrentPlayer, NewBoard),
     decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
     get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
-    check_lines_formed(PlayerType, first_stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
+    check_lines_formed(false, PlayerType, first_stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
     NewLines = UpdatedLines,
     NewAllowPressCount is AllowPressCount + NewLineCount,
     !.
@@ -401,7 +423,7 @@ move(game_state(PlayerTypes, second_stage, Board, CurrentPlayer, [RedCount, Blac
     NewRedCount = RedCount,
     NewBlackCount = BlackCount,
     get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
-    check_lines_formed(PlayerType, second_stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
+    check_lines_formed(false, PlayerType, second_stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
     NewLines = UpdatedLines,
     NewAllowRemoveCount is AllowRemoveCount + NewLineCount,
     !.
@@ -497,8 +519,8 @@ decrement_piece_count(black, RedCount, BlackCount, NewRedCount, NewBlackCount) :
     NewBlackCount is BlackCount - 1,
     NewRedCount = RedCount.
 
-% check_lines_formed/8 - Finds newly formed lines based on the game stage and updates the Lines list
-check_lines_formed(PlayerType, first_stage, Move, Board, Player, ExistingLines, UpdatedLines, NewLineCount) :-
+% check_lines_formed/9 - Finds newly formed lines based on the game stage and updates the Lines list
+check_lines_formed(Simulation, PlayerType, first_stage, Move, Board, Player, ExistingLines, UpdatedLines, NewLineCount) :-
     straight_lines(AllPossibleLines),
     findall(Line, (
         member(Line, AllPossibleLines),     % Select a possible straight line.
@@ -506,13 +528,13 @@ check_lines_formed(PlayerType, first_stage, Move, Board, Player, ExistingLines, 
         all_in_line(Board, Line, Player)    % Check that all positions in the line belong to the Player.
     ), NewLines),
 
-    print_new_lines(NewLines, PlayerType),
+    print_new_lines(NewLines, PlayerType, Simulation),
 
     length(NewLines, NewLineCount),         % Count how many new lines were formed
     append(ExistingLines, NewLines, UpdatedLines),
     !.
 
-check_lines_formed(PlayerType, second_stage, Move, Board, Player, ExistingLines, UpdatedLines, NewLineCount) :-
+check_lines_formed(Simulation, PlayerType, second_stage, Move, Board, Player, ExistingLines, UpdatedLines, NewLineCount) :-
     % Extract the destination position from the move string (e.g., a1b4 -> b4)
     sub_atom(Move, 2, _, 0, Destination),
 
@@ -524,25 +546,27 @@ check_lines_formed(PlayerType, second_stage, Move, Board, Player, ExistingLines,
         member(Destination, Line)                  % Ensure the moved piece forms the line.
     ), NewLines),
 
-    print_new_lines(NewLines, PlayerType),
+    print_new_lines(NewLines, PlayerType, Simulation),
 
     length(NewLines, NewLineCount),         % Count how many new lines were formed
     append(ExistingLines, NewLines, UpdatedLines),
     !.
 
-% print_new_lines/2 - Handles the printing of new lines if any are formed
-print_new_lines([], human) :- !. % Do nothing
+% print_new_lines/3 - Handles the printing of new lines if any are formed
+print_new_lines([], human, _Simulation) :- !. % Do nothing
 
-print_new_lines([], computer-Level) :-
+print_new_lines([], computer-Level, true) :- !.
+
+print_new_lines([], computer-Level, false) :-
     nl,
     write('Press ENTER to continue...'), nl,
     wait_for_enter.
 
-print_new_lines(NewLines, human) :-
+print_new_lines(NewLines, human, false) :-
     nl,
     write('New line(s) formed: '), write(NewLines), nl.
 
-print_new_lines(NewLines, computer-Level) :-
+print_new_lines(NewLines, computer-Level, false) :-
     nl,
     write('New line(s) formed: '), write(NewLines), nl,
     nl,
@@ -705,7 +729,7 @@ remove(GameState, human, NewGameState) :-
     valid_moves(GameState, ValidMoves),
     write('Valid Moves: '), write(ValidMoves), nl, nl,
     repeat,
-    write('You formed a line! Choose an opponent\'s piece to remove'),
+    write('You formed a line! Choose an opponent\'s piece to remove'), nl,
     catch(read(RemoveMove), _, invalid_remove_input),
     skip_line,
     process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState),
