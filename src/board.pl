@@ -36,29 +36,28 @@ display_game(game_state(PlayerTypes, Stage, Board, CurrentPlayer, Pieces, Lines,
 % print_cell/2 - Helper predicate to print a cell's content
 print_cell(Board, Position) :-
     memberchk(Position-Cell, Board),
-    ( 
-        Cell = empty,
-        write('#')
-    ; 
-        Cell == red,
-        write_colored_text(red, 'R')
-    ;
-        Cell == black,
-        write_colored_text(green, 'B')
-    ;
-        Cell == pressed,
-        write_colored_text(magenta, 'P')
-    ).
+    print_cell_content(Cell).
 
-print_current_player(CurrentPlayer) :-
-    write('Current Player: '), 
-    (
-        CurrentPlayer == red,
-        write_colored_text(red, 'Red')
-    ;
-        CurrentPlayer == black,
-        write_colored_text(green, 'Black')
-    ), nl.
+print_cell_content(empty) :-
+    write('#').
+
+print_cell_content(red) :-
+    write_colored_text(red, 'R').
+
+print_cell_content(black) :-
+    write_colored_text(green, 'B').
+
+print_cell_content(pressed) :-
+    write_colored_text(magenta, 'P').
+
+% print_current_player/1 - Prints the current player
+print_current_player(red) :-
+    write('Current Player: '),
+    write_colored_text(red, 'Red'), nl.
+
+print_current_player(black) :-
+    write('Current Player: '),
+    write_colored_text(green, 'Black'), nl.
 
 % valid_position/1 - Verifies if the position input is valid
 valid_position(Position) :-
