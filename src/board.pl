@@ -91,13 +91,13 @@ straight_lines([
 
 % adjacency_list/1 - Defines the adjacency relationships for second stage moves
 adjacency_list([
-    [a1, a4, b1, d1], [d1, a1, d2, g1], [g1, d1, f2, g4],
-    [b2, a1, b4, c2, d2], [d2, b2, d1, d3, f2], [f2, d2, e3, f4, g1],
+    [a1, a4, b2, d1], [d1, a1, d2, g1], [g1, d1, f2, g4],
+    [b2, a1, b4, c3, d2], [d2, b2, d3, d1, f2], [f2, d2, e3, f4, g1],
     [c3, b2, c4, d3], [d3, c3, d2, e3], [e3, d3, e4, f2],
-    [a4, a1, a7, b4], [b4, a4, b2, b6, c4], [c4, b4, c3, c5],
-    [e4, e3, e5, f4], [f4, e4, f2, f6, g4], [g4, f4, g1, g7],
+    [a4, a7, a1, b4], [b4, a4, b6, b2, c4], [c4, b4, c5, c3],
+    [e4, e5, e3, f4], [f4, e4, f6, f2, g4], [g4, f4, g7, g1],
     [c5, b6, c4, d5], [d5, c5, d6, e5], [e5, d5, e4, f6],
-    [b6, a7, b4, c5, d6], [d6, b6, d5, d7, f6], [f6, d6, e5, f5, g7],
+    [b6, a7, b4, c5, d6], [d6, b6, d7, d5, f6], [f6, d6, e5, f4, g7],
     [a7, a4, b6, d7], [d7, a7, d6, g7], [g7, d7, f6, g4]
 ]).
 
