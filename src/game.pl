@@ -334,6 +334,7 @@ process_move(Move, ValidMoves, Move) :-
     memberchk(Move, ValidMoves),
     !.
 
+
 process_move(_, _, _) :-
     invalid_move_input.
 
@@ -552,7 +553,7 @@ choose_piece_to_remove(GameState, human, NewGameState) :-
     GameState = game_state(PlayerTypes, Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
     repeat,
     write('Valid Moves: '), write(ValidMoves), nl,
-    write(Choose a piece to remove'), nl,
+    write('Choose a piece to remove'), nl,
     catch(read(Position), _, invalid_remove_choice_input),
     skip_line,
     process_remove_choice(GameState, Position, ValidMoves, NewGameState),
