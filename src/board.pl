@@ -1,7 +1,7 @@
 :- consult('utils.pl').
 
 % display_game/1 - Displays the current game state
-display_game(game_state(PlayerTypes, Stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount)) :-
+display_game(game_state(_PlayerTypes, Stage, Board, CurrentPlayer, _Pieces, _Lines, _AllowRewardMoveCount)) :-
     nl,
     draw_stage_box(Stage),
     nl,
@@ -86,7 +86,7 @@ draw_vertical_lines(Height, Text) :-
     Middle is (Height + 1) // 2,
     draw_vertical_lines(Height, Text, Middle).
 
-draw_vertical_lines(0, _, _) :- !.
+draw_vertical_lines(0, _Text, _Middle) :- !.
 
 draw_vertical_lines(N, Text, Middle) :-
     N > 0,

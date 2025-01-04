@@ -1,9 +1,8 @@
-:- consult('menu.pl').
-:- consult('board.pl').
-:- consult('utils.pl').
-
 :- use_module(library(random)).
 :- use_module(library(lists)).
+
+:- consult('menu.pl').
+:- consult('board.pl').
 
 % play/0 - Main predicate to start the game and display the menu
 play :- 
@@ -129,7 +128,7 @@ get_player_type(CurrentPlayer, PlayerTypes, PlayerType) :-
 
 % first_stage_loop/1 - First stage loop of the game
 first_stage_loop(GameState) :-
-    GameState = game_state(PlayerTypes, first_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
+    GameState = game_state(_PlayerTypes, first_stage, _Board, _CurrentPlayer, _Pieces, _Lines, _AllowPressCount),
     display_game(GameState),
     first_stage_over(GameState, Transition),
     !,
@@ -141,7 +140,7 @@ first_stage_loop(GameState) :-
     Transition.
 
 first_stage_loop(GameState) :-
-    GameState = game_state(PlayerTypes, first_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
+    GameState = game_state(PlayerTypes, first_stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowPressCount),
     get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
     choose_move(GameState, PlayerType, Move),
     move(GameState, Move, GameStateAfterMove),
@@ -173,7 +172,7 @@ choose_move(2, game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, P
     reverse(SortedMoveValues, ReversedMoveValues),
 
     % Extract the best value
-    ReversedMoveValues = [BestValue-_|_],
+    ReversedMoveValues = [BestValue-_Move|_Rest],
 
     % Collect all moves with the best value
     findall(Move, member(BestValue-Move, ReversedMoveValues), BestMoves),
@@ -187,7 +186,7 @@ choose_move(2, GameState, ValidMoves, BestMove) :-
     findall(Value-Move,
         (member(Move, ValidMoves),
          simulate_move(GameState, Move, SimulatedGameState), % Simulate the move
-         GameState = game_state(_, _, Board, CurrentPlayer, Pieces, Lines, AllowRewardMoveCount),
+         GameState = game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRewardMoveCount),
          value(SimulatedGameState, CurrentPlayer, Value)),   % Evaluate the state
         MoveValues),
 
@@ -196,7 +195,7 @@ choose_move(2, GameState, ValidMoves, BestMove) :-
     reverse(SortedMoveValues, ReversedMoveValues),
 
     % Extract the best value
-    ReversedMoveValues = [BestValue-_|_],
+    ReversedMoveValues = [BestValue-_Move|_Rest],
 
     % Collect all moves with the best value
     findall(Move, member(BestValue-Move, ReversedMoveValues), BestMoves),
@@ -238,7 +237,7 @@ simulate_move(game_state(PlayerTypes, second_stage, Board, CurrentPlayer, [RedCo
     !.
 
 % value/3 - Evaluates the desirability of a game state for the current player
-value(game_state(_, transition_stage, Board, CurrentPlayer, _, Lines, _), CurrentPlayer, Value) :-
+value(game_state(_PlayerTypes, transition_stage, Board, CurrentPlayer, _Pieces, _Lines, _AllowPressCount), CurrentPlayer, Value) :-
     % Count potential lines for the opponent
     next_player(CurrentPlayer, Opponent),
     count_potential_lines(Board, Opponent, OpponentPotentialLines),
@@ -258,7 +257,7 @@ value(game_state(_, transition_stage, Board, CurrentPlayer, _, Lines, _), Curren
 
     Value is - OpponentPotentialLines * 5 + CurrentPlayerPotentialLines * 2 + CurrentPlayerMobility - OpponentMobility.
 
-value(game_state(_, first_stage, Board, CurrentPlayer, _, Lines, AllowPressCount), CurrentPlayer, Value) :-
+value(game_state(_PlayerTypes, first_stage, Board, CurrentPlayer, _Pieces, _Lines, AllowPressCount), CurrentPlayer, Value) :-
     AllowPressCount > 0,
 
     % Count lines formed by the current player
@@ -275,7 +274,7 @@ value(game_state(_, first_stage, Board, CurrentPlayer, _, Lines, AllowPressCount
 
     Value is CurrentPlayerLines * 10 - OpponentPotentialLines * 5 - CurrentPlayerPotentialLines * 2.
 
-value(game_state(_, first_stage, Board, CurrentPlayer, _, Lines, 0), CurrentPlayer, Value) :-
+value(game_state(_PlayerTypes, first_stage, Board, CurrentPlayer, _Pieces, _Lines, 0), CurrentPlayer, Value) :-
     % Count lines formed by the current player
     count_lines(Board, CurrentPlayer, CurrentPlayerLines),
 
@@ -288,7 +287,7 @@ value(game_state(_, first_stage, Board, CurrentPlayer, _, Lines, 0), CurrentPlay
 
     Value is CurrentPlayerLines * 10 - OpponentPotentialLines * 5 + CurrentPlayerPotentialLines * 2.
 
-value(game_state(_, second_stage, Board, CurrentPlayer, _, Lines, _), CurrentPlayer, Value) :-
+value(game_state(_PlayerTypes, second_stage, Board, CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount), CurrentPlayer, Value) :-
     % Count lines formed by the current player
     count_lines(Board, CurrentPlayer, CurrentPlayerLines),
 
@@ -355,23 +354,23 @@ read_move(GameState, Move) :-
     !.
 
 % valid_moves/2 - Returns a list of all possible valid moves
-valid_moves(game_state(_, transition_stage, Board, CurrentPlayer, _, _, _), ListOfMoves) :-
+valid_moves(game_state(_PlayerTypes, transition_stage, Board, CurrentPlayer, _Pieces, _Lines, _AllowRewardMoveCount), ListOfMoves) :-
     setof(Position, member(Position-CurrentPlayer, Board), ListOfMoves).
 
-valid_moves(game_state(_, first_stage, Board, CurrentPlayer, _, _, AllowRewardMoveCount), ListOfMoves) :-
+valid_moves(game_state(_PlayerTypes, first_stage, Board, CurrentPlayer, _Pieces, _Lines, AllowRewardMoveCount), ListOfMoves) :-
     AllowRewardMoveCount > 0,
     next_player(CurrentPlayer, Opponent),
     setof(Position, member(Position-Opponent, Board), ListOfMoves).
 
-valid_moves(game_state(_, first_stage, Board, _, _, _, 0), ListOfMoves) :-
+valid_moves(game_state(_PlayerTypes, first_stage, Board, _CurrentPlayer, _Pieces, _Lines, 0), ListOfMoves) :-
     setof(Position, member(Position-empty, Board), ListOfMoves).
 
-valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, AllowRewardMoveCount), ListOfMoves) :-
+valid_moves(game_state(_PlayerTypes, second_stage, Board, CurrentPlayer, _Pieces, _Lines, AllowRewardMoveCount), ListOfMoves) :-
     AllowRewardMoveCount > 0,
     next_player(CurrentPlayer, Opponent),
     setof(Position, member(Position-Opponent, Board), ListOfMoves).
 
-valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, 0), ListOfMoves) :-
+valid_moves(game_state(_PlayerTypes, second_stage, Board, CurrentPlayer, _Pieces, _Lines, 0), ListOfMoves) :-
     findall(Move, (
         member(From-CurrentPlayer, Board),  % Find the player's pieces
         adjacent_position(From, To),        % Get adjacent positions
@@ -381,7 +380,7 @@ valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, 0), ListOfMo
     sort(UnsortedMoves, ListOfMoves).
 
 % process_move/4 - Processes user input as a move
-process_move(forfeit, _, _, game_state(_, _, _, CurrentPlayer, _, _, _)) :-
+process_move(forfeit, _ValidMoves, _Move, game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRewardMoveCount)) :-
     next_player(CurrentPlayer, Winner),
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
@@ -405,7 +404,7 @@ process_move(Move, ValidMoves, Move, _GameState) :-
     memberchk(Move, ValidMoves),
     !.
 
-process_move(_, _, _, _GameState) :-
+process_move(_Input, _ValidMoves, _Move, _GameState) :-
     invalid_move_input.
 
 % invalid_move_input/0 - Handles invalid move input
@@ -436,7 +435,7 @@ move(game_state(PlayerTypes, second_stage, Board, CurrentPlayer, [RedCount, Blac
 
 % handle_press_down_move/1 - Handles whether to perform a press down move or continue the game loop
 handle_press_down_move(GameStateAfterMove) :-
-    GameStateAfterMove = game_state(PlayerTypes, first_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
+    GameStateAfterMove = game_state(PlayerTypes, first_stage, _Board, CurrentPlayer, _Pieces, _Lines, AllowPressCount),
     AllowPressCount > 0,
     display_game(GameStateAfterMove),
     write('Moves left to press down: '), write(AllowPressCount), nl, nl,
@@ -467,11 +466,11 @@ press_down(GameState, computer-Level, NewGameState) :-
     process_press_down_move(GameState, PressMove, ValidMoves, NewGameState),
     nl,
     write('Press ENTER to continue...'), nl,
-    wait_for_enter.
+    wait_for_enter,
     !.
 
 % process_press_down_move/4 - Processes the press down move based on its validity
-process_press_down_move(game_state(_, _, _, CurrentPlayer, _, _, _), forfeit, _, _) :-
+process_press_down_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowPressCount), forfeit, _ValidMoves, _NewGameState) :-
     next_player(CurrentPlayer, Winner),
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
@@ -483,13 +482,13 @@ process_press_down_move(GameState, PressMove, ValidMoves, NewGameState) :-
     valid_position(PressMove),
     memberchk(PressMove, ValidMoves),
     GameState = game_state(PlayerTypes, first_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
-    next_player(CurrentPlayer, NextPlayer),
+    next_player(CurrentPlayer, _NextPlayer),
     update_board(Board, PressMove, pressed, NewBoard),
     decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
     NewAllowPressCount is AllowPressCount - 1,
     NewGameState = game_state(PlayerTypes, first_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], Lines, NewAllowPressCount).
 
-process_press_down_move(_, _, _, _) :-
+process_press_down_move(_GameState, _PressMove, _ValidMoves, _NewGameState) :-
     invalid_press_down_input.
 
 % invalid_press_down_input/0 - Handles invalid press down input
@@ -498,10 +497,10 @@ invalid_press_down_input :-
     fail.
 
 % update_board/4 - Updates the board with the player's move or maintains the state if no update
-update_board([], _, _, []). % Base case: empty board
+update_board([], _Position, _NewState, []). % Base case: empty board
 
 % First stage: Matching position, update to the new state
-update_board([Position-_|Rest], Position, NewState, [Position-NewState|NewRest]) :-
+update_board([Position-_State|Rest], Position, NewState, [Position-NewState|NewRest]) :-
     atom_length(Position, 2),
     update_board(Rest, Position, NewState, NewRest).
 
@@ -528,7 +527,7 @@ decrement_piece_count(black, RedCount, BlackCount, NewRedCount, NewBlackCount) :
     NewRedCount = RedCount.
 
 % check_lines_formed/9 - Finds newly formed lines based on the game stage and updates the Lines list
-check_lines_formed(Simulation, PlayerType, first_stage, Move, Board, Player, ExistingLines, UpdatedLines, NewLineCount) :-
+check_lines_formed(Simulation, PlayerType, first_stage, _Move, Board, Player, ExistingLines, UpdatedLines, NewLineCount) :-
     straight_lines(AllPossibleLines),
     findall(Line, (
         member(Line, AllPossibleLines),     % Select a possible straight line.
@@ -569,12 +568,12 @@ print_new_lines(NewLines, human, false) :-
     nl,
     write('New line(s) formed: '), write(NewLines), nl.
 
-print_new_lines([], computer-Level, false) :-
+print_new_lines([], computer-_Level, false) :-
     nl,
     write('Press ENTER to continue...'), nl,
     wait_for_enter.
 
-print_new_lines(NewLines, computer-Level, false) :-
+print_new_lines(NewLines, computer-_Level, false) :-
     nl,
     write('New line(s) formed: '), write(NewLines), nl,
     nl,
@@ -594,7 +593,7 @@ next_player(black, red).
 
 % first_stage_over/2 - Checks if the stage 1 is over and handles the board
 first_stage_over(GameState, second_stage_loop(NewGameState)) :-
-    GameState = game_state(PlayerTypes, Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
+    GameState = game_state(PlayerTypes, _Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
     \+ memberchk(_-empty, Board),
     write('Play Stage complete. Checking for pressed pieces...'), nl,
     
@@ -604,7 +603,7 @@ first_stage_over(GameState, second_stage_loop(NewGameState)) :-
     handle_pressed_pieces(PressedFound, TransitionState, BoardWithoutPressed, NewGameState).
 
 % handle_pressed_pieces/4 - Handles the cases based on whether pressed pieces were found
-handle_pressed_pieces(false, game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), BoardWithoutPressed, NewGameState) :-
+handle_pressed_pieces(false, game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), _BoardWithoutPressed, NewGameState) :-
     GameState = game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
     write('No pressed pieces. Each side will remove one piece.'), nl, nl,
     get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
@@ -620,7 +619,7 @@ handle_pressed_pieces(false, game_state(PlayerTypes, transition_stage, Board, Cu
     count_pieces(FinalBoard, black, NewBlackCount),
     NewGameState = game_state(PlayerTypes, second_stage, FinalBoard, NextPlayer, [NewRedCount, NewBlackCount], [], 0).
 
-handle_pressed_pieces(true, game_state(PlayerTypes, transition_stage, _, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), BoardWithoutPressed, NewGameState) :-
+handle_pressed_pieces(true, game_state(PlayerTypes, transition_stage, _, CurrentPlayer, [_RedCount, _BlackCount], _Lines, _AllowPressCount), BoardWithoutPressed, NewGameState) :-
     write('Removing pressed pieces...'), nl,
     FinalBoard = BoardWithoutPressed,
     count_pieces(BoardWithoutPressed, red, NewRedCount),
@@ -640,7 +639,6 @@ remove_all_pressed([Other | Rest], [Other | NewRest], PressedFound) :-
 % choose_piece_to_remove/3 - Allows a player to choose one piece to remove
 choose_piece_to_remove(GameState, human, NewGameState) :-
     valid_moves(GameState, ValidMoves),  % Get the player's own pieces
-    GameState = game_state(PlayerTypes, Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
     write('Valid Moves: '), write(ValidMoves), nl, nl,
     repeat,
     write('Choose a piece to remove'), nl,
@@ -655,11 +653,11 @@ choose_piece_to_remove(GameState, computer-Level, NewGameState) :-
     process_remove_choice(GameState, Position, ValidMoves, NewGameState),
     nl,
     write('Press ENTER to continue...'), nl,
-    wait_for_enter.
+    wait_for_enter,
     !.
 
 % process_remove_choice/4 - Processes the remove choice based on its validity
-process_remove_choice(game_state(_, _, _, CurrentPlayer, _, _, _), forfeit, _, _) :-
+process_remove_choice(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount), forfeit, _ValidMoves, _NewGameState) :-
     next_player(CurrentPlayer, Winner),
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
@@ -674,7 +672,7 @@ process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
     update_board(Board, Position, empty, NewBoard),
     NewGameState = game_state(PlayerTypes, transition_stage, NewBoard, CurrentPlayer, Pieces, Lines, AllowPressCount).
 
-process_remove_choice(_, _, _, _) :-
+process_remove_choice(_GameState, _Position, _ValidMoves, _NewGameState) :-
     invalid_remove_choice_input.
 
 % invalid_remove_choice_input/0 - Handles invalid remove choice input
@@ -683,9 +681,9 @@ invalid_remove_choice_input :-
     fail.
 
 % count_pieces/3 - Recursively counts the number of pieces of a given player on the board
-count_pieces([], _, 0). % Base case: empty board, count is 0
+count_pieces([], _Player, 0). % Base case: empty board, count is 0
 
-count_pieces([_-Player | Rest], Player, Count) :-
+count_pieces([_Position-Player | Rest], Player, Count) :-
     count_pieces(Rest, Player, RestCount),
     Count is RestCount + 1.
 
@@ -694,7 +692,7 @@ count_pieces([_ | Rest], Player, Count) :-
 
 % second_stage_loop/1 - Second stage loop of the game
 second_stage_loop(GameState) :-
-    GameState = game_state(PlayerTypes, second_stage, Board, CurrentPlayer, Pieces, Lines, AllowRemoveCount),
+    GameState = game_state(_PlayerTypes, second_stage, _Board, _CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount),
     display_game(GameState),
     game_over(GameState, Winner),
     !,
@@ -705,7 +703,7 @@ second_stage_loop(GameState) :-
     play.
 
 second_stage_loop(GameState) :-
-    GameState = game_state(_, _, _, CurrentPlayer, _, _, _),
+    GameState = game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount),
     valid_moves(GameState, []),  % No valid moves left
     write('Valid Moves: []'), nl, nl,
     write('YOU HAVE NO VALID MOVES LEFT'), nl, nl,
@@ -716,7 +714,7 @@ second_stage_loop(GameState) :-
     play.
     
 second_stage_loop(GameState) :-
-    GameState = game_state(PlayerTypes, second_stage, Board, CurrentPlayer, Pieces, Lines, AllowRemoveCount),
+    GameState = game_state(PlayerTypes, second_stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount),
     valid_moves(GameState, ValidMoves),
     ValidMoves \= [],
     get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
@@ -728,7 +726,7 @@ second_stage_loop(GameState) :-
 
 % handle_remove_move/2 - Handles whether to perform a remove move or continue the game loop
 handle_remove_move(GameStateAfterMove, GameStateAfterRemove) :-
-    GameStateAfterMove = game_state(PlayerTypes, second_stage, Board, CurrentPlayer, Pieces, Lines, AllowRemoveCount),
+    GameStateAfterMove = game_state(PlayerTypes, second_stage, _Board, CurrentPlayer, _Pieces, _Lines, AllowRemoveCount),
     AllowRemoveCount > 0,
     display_game(GameStateAfterMove),
     write('Moves left to remove: '), write(AllowRemoveCount), nl, nl,
@@ -759,11 +757,11 @@ remove(GameState, computer-Level, NewGameState) :-
     process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState),
     nl,
     write('Press ENTER to continue...'), nl,
-    wait_for_enter.
+    wait_for_enter,
     !.
 
 % process_remove_move/4 - Processes the remove move based on its validity
-process_remove_move(game_state(_, _, _, CurrentPlayer, _, _, _), forfeit, _, _) :-
+process_remove_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount), forfeit, _ValidMoves, _NewGameState) :-
     next_player(CurrentPlayer, Winner),
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
@@ -790,7 +788,7 @@ invalid_remove_input :-
     fail.
 
 % update_lines/2 - Updates the Lines in the game state based on the current board
-update_lines(game_state(PlayerTypes, Stage, Board, CurrentPlayer, Pieces, OldLines, AllowRemoveCount), 
+update_lines(game_state(PlayerTypes, Stage, Board, CurrentPlayer, Pieces, _OldLines, AllowRemoveCount), 
              game_state(PlayerTypes, Stage, Board, CurrentPlayer, Pieces, NewLines, AllowRemoveCount)) :-
     straight_lines(StraightLines),
     findall(Line, (member(Line, StraightLines), all_same_player(Board, Line)), NewLines).
