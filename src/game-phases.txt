@@ -1,3 +1,18 @@
+EMPTY BOARD FIRST STAGE
+% initial_state/2 - Sets up the initial game state with 18 pieces per player
+% Initial state changed for debugging issues
+initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [18, 18], [], 0)) :-
+    % Initialize the board with empty positions
+    Board = [
+        a1-empty, d1-empty, g1-empty, 
+        b2-empty, d2-empty, f2-empty, 
+        c3-empty, d3-empty, e3-empty,
+        a4-empty, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
+        c5-empty, d5-empty, e5-empty,
+        b6-empty, d6-empty, f6-empty, 
+        a7-empty, d7-empty, g7-empty
+    ].
+
 ONE LINE FOR RED AND NEXT PLAY RED d6 BLACK e3 TO LET BLACK HAVE 1 LINE
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues

@@ -3,6 +3,8 @@
 % display_game/1 - Displays the current game state
 display_game(game_state(PlayerTypes, Stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount)) :-
     nl,
+    draw_stage_box(Stage),
+    nl,
     write('7  '), print_cell(Board, a7), write('------------------------'), print_cell(Board, d7), write('------------------------'), print_cell(Board, g7), nl,
     write('   | +                      |                      + |   '), nl,
     write('   |   +                    |                    +   |   '), nl,
@@ -50,15 +52,25 @@ print_cell_content(black) :-
 print_cell_content(pressed) :-
     write_colored_text(magenta, 'P').
 
-% draw_current_player_box/1 - Draws the box for the current player
-draw_current_player_box(CurrentPlayer) :-
+% draw_stage_box/1 - Draws the box for the current game stage
+draw_stage_box(Stage) :-
     put_code(9556), % Draw the top-left corner
-    draw_horizontal_line(52), % Draw the horizontal line (10 times in this example)
+    draw_horizontal_line(52), % Draw the horizontal line
     put_code(9559), nl, % Draw the top-right corner
-    draw_vertical_lines(3, CurrentPlayer), % Draw the vertical lines
+    draw_vertical_lines(3, Stage), % Draw the vertical lines
     put_code(9562), % Draw the bottom-left corner
     draw_horizontal_line(52), % Draw the horizontal line
     put_code(9565), nl. % Draw the bottom-right corner
+
+% draw_current_player_box/1 - Draws the box for the current player
+draw_current_player_box(CurrentPlayer) :-
+    put_code(9556), 
+    draw_horizontal_line(52), 
+    put_code(9559), nl,
+    draw_vertical_lines(3, CurrentPlayer),
+    put_code(9562),
+    draw_horizontal_line(52),
+    put_code(9565), nl.
 
 % draw_horizontal_line/1 - Draws a horizontal line with the specified length
 draw_horizontal_line(0) :- !.
@@ -68,41 +80,62 @@ draw_horizontal_line(N) :-
     N1 is N - 1,
     draw_horizontal_line(N1).
 
-% draw_vertical_lines/2 - Draws vertical lines with the specified height and prints the current player in the middle
-draw_vertical_lines(Height, CurrentPlayer) :-
+% draw_vertical_lines/2 - Draws vertical lines with the specified height and prints the text in the middle
+draw_vertical_lines(Height, Text) :-
     Middle is (Height + 1) // 2,
-    draw_vertical_lines(Height, CurrentPlayer, Middle).
+    draw_vertical_lines(Height, Text, Middle).
 
 draw_vertical_lines(0, _, _) :- !.
 
-draw_vertical_lines(N, CurrentPlayer, Middle) :-
+draw_vertical_lines(N, Text, Middle) :-
     N > 0,
     N = Middle,
-    draw_middle_line(CurrentPlayer),
+    draw_middle_line(Text),
     N1 is N - 1,
-    draw_vertical_lines(N1, CurrentPlayer, Middle).
+    draw_vertical_lines(N1, Text, Middle).
 
-draw_vertical_lines(N, CurrentPlayer, Middle) :-
+draw_vertical_lines(N, Text, Middle) :-
     N > 0,
     N \= Middle,
     draw_regular_line,
     N1 is N - 1,
-    draw_vertical_lines(N1, CurrentPlayer, Middle).
+    draw_vertical_lines(N1, Text, Middle).
 
-% draw_middle_line/1 - Draws the middle line with the current player
-draw_middle_line(red) :-
+% draw_middle_line/1 - Draws the middle line with the text
+draw_middle_line(first_stage) :-
     put_code(9553), % Draw the left vertical line
+    draw_spaces(14),
+    write('First Stage (Play Stage)'),
+    draw_spaces(14),
+    put_code(9553), nl. % Draw the right vertical line
+
+draw_middle_line(second_stage) :-
+    put_code(9553),
+    draw_spaces(13),
+    write('Second Stage (Move Stage)'),
+    draw_spaces(14),
+    put_code(9553), nl.
+
+draw_middle_line(transition_stage) :-
+    put_code(9553),
+    draw_spaces(18),
+    write('Transition Stage'),
+    draw_spaces(18),
+    put_code(9553), nl.
+
+draw_middle_line(red) :-
+    put_code(9553),
     draw_spaces(15),
     write('Current Player => '), write_colored_text(red, 'Red'),
     draw_spaces(16),
-    put_code(9553), nl. % Draw the right vertical line
+    put_code(9553), nl.
 
 draw_middle_line(black) :-
-    put_code(9553), % Draw the left vertical line
+    put_code(9553),
     draw_spaces(14),
     write('Current Player => '), write_colored_text(green, 'Black'),
     draw_spaces(15),
-    put_code(9553), nl. % Draw the right vertical line
+    put_code(9553), nl.
 
 % draw_regular_line/0 - Draws a regular line without the current player
 draw_regular_line :-

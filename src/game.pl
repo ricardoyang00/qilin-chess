@@ -5,19 +5,6 @@
 :- use_module(library(random)).
 :- use_module(library(lists)).
 
-% Debug function to see board.
-display_board(game_state(PlayerTypes, Stage, Board, CurrentPlayer, [RedCount, BlackCount], _, _)) :-
-    nth1(CurrentPlayerIndex, [red, black], CurrentPlayer),
-    nth1(CurrentPlayerIndex, PlayerTypes, PlayerType),
-    write('Player Type: '), write(PlayerType), nl.
-    write('Current Board State: '), nl,
-    write('Board: '), write(Board), nl,
-    write('Stage: '), write(Stage), nl,
-    write('Pieces left: '), nl,
-    write('Red: '), write(RedCount), nl,
-    write('Black: '), write(BlackCount), nl, nl.
-
-
 % play/0 - Main predicate to start the game and display the menu
 play :- 
     repeat,
@@ -62,16 +49,16 @@ start_game(Player1Type, Player2Type) :-
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [7, 7], [], 0)) :-
+initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [18, 18], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
-        a1-red, d1-red, g1-black, 
-        b2-black, d2-black, f2-red, 
-        c3-red, d3-black, e3-empty,
-        a4-black, b4-red, c4-black, e4-red, f4-black, g4-red, 
-        c5-red, d5-black, e5-red,
-        b6-black, d6-empty, f6-red, 
-        a7-black, d7-red, g7-black
+        a1-empty, d1-empty, g1-empty, 
+        b2-empty, d2-empty, f2-empty, 
+        c3-empty, d3-empty, e3-empty,
+        a4-empty, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
+        c5-empty, d5-empty, e5-empty,
+        b6-empty, d6-empty, f6-empty, 
+        a7-empty, d7-empty, g7-empty
     ].
 
 % get_player_type/3 - Determines the player type based on the current player
@@ -83,7 +70,6 @@ get_player_type(CurrentPlayer, PlayerTypes, PlayerType) :-
 first_stage_loop(GameState) :-
     GameState = game_state(PlayerTypes, first_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
     display_game(GameState),
-    display_board(GameState),
     first_stage_over(GameState, Transition),
     !,
     write('Entering the second stage (Move Stage) ...'), nl,
@@ -368,7 +354,6 @@ handle_press_down_move(GameStateAfterMove) :-
     GameStateAfterMove = game_state(PlayerTypes, first_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
     AllowPressCount > 0,
     display_game(GameStateAfterMove),
-    display_board(GameStateAfterMove),
     write('Moves left to press down: '), write(AllowPressCount), nl,
     get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
     press_down(GameStateAfterMove, PlayerType, GameStateAfterPress),
@@ -469,7 +454,6 @@ check_lines_formed(first_stage, Move, Board, Player, ExistingLines, UpdatedLines
     ),
 
     length(NewLines, NewLineCount),         % Count how many new lines were formed
-    write('NewLineCount: '), write(NewLineCount), nl,
     append(ExistingLines, NewLines, UpdatedLines),
     !.
 
@@ -607,7 +591,6 @@ count_pieces([_ | Rest], Player, Count) :-
 second_stage_loop(GameState) :-
     GameState = game_state(PlayerTypes, second_stage, Board, CurrentPlayer, Pieces, Lines, AllowRemoveCount),
     display_game(GameState),
-    display_board(GameState),
     game_over(GameState, Winner),
     !,
     write('GAME OVER, WINNER IS: '), write(Winner), nl.
@@ -636,7 +619,6 @@ handle_remove_move(GameStateAfterMove, GameStateAfterRemove) :-
     GameStateAfterMove = game_state(PlayerTypes, second_stage, Board, CurrentPlayer, Pieces, Lines, AllowRemoveCount),
     AllowRemoveCount > 0,
     display_game(GameStateAfterMove),
-    display_board(GameStateAfterMove),
     write('Moves left to remove: '), write(AllowRemoveCount), nl,
     get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
     remove(GameStateAfterMove, PlayerType, TempGameStateAfterRemove),
