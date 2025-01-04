@@ -1,8 +1,11 @@
+:- use_module(library(file_systems)).
 :- use_module(library(random)).
 :- use_module(library(lists)).
+:- use_module(library(system)).
 
 :- consult('menu.pl').
 :- consult('board.pl').
+:- consult('save_and_load.pl').
 
 % play/0 - Main predicate to start the game and display the menu
 play :- 
@@ -42,6 +45,12 @@ handle_option(3) :-
     wait_for_enter,
     !,
     fail.   % Fail to continue the repeat play loop
+
+handle_option(4) :-
+    nl,
+    load_game(GameState),
+    start_game_from_state(GameState),
+    fail.
 
 handle_option(0) :-
     nl,
@@ -131,7 +140,7 @@ initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type],
     ].
 
 % /////////////////////////////////////////////////////////////////////
-
+    
 % //////////////////////////// First Stage ////////////////////////////
 
 % first_stage_loop/1 - First stage loop of the game
@@ -404,6 +413,11 @@ process_move(forfeit, _ValidMoves, _Move, game_state(_PlayerTypes, _Stage, _Boar
     !,
     play.
 
+process_move(save, _ValidMoves, _Move, GameState) :-
+    save_game(GameState),
+    !,
+    play.
+
 % process_move/4 - Processes user input as a move of the type a1
 process_move(Move, ValidMoves, Move, _GameState) :-
     atom(Move),
@@ -504,6 +518,11 @@ process_press_down_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, 
     wait_for_enter,
     !,
     play.
+
+process_press_down_move(_GameState, save, _ValidMoves, _NewGameState) :-
+    write('Saving the game is not supported in the current state.'), nl, nl,
+    !,
+    fail.
 
 % process_press_down_move/4 - Processes the press down move based on its validity
 process_press_down_move(GameState, PressMove, ValidMoves, NewGameState) :-
@@ -708,6 +727,11 @@ process_remove_choice(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _P
     !,
     play.
 
+process_remove_choice(_GameState, save, _ValidMoves, _NewGameState) :-
+    write('Saving the game is not supported in the transition state.'), nl, nl,
+    !,
+    fail.
+
 process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
     atom(Position),
     valid_position(Position),
@@ -823,6 +847,11 @@ process_remove_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pie
     wait_for_enter,
     !,
     play.
+
+process_remove_move(_GameState, save, _ValidMoves, _NewGameState) :-
+    write('Saving the game is not supported in the current state.'), nl, nl,
+    !,
+    fail.
 
 process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState) :-
     atom(RemoveMove),

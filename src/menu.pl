@@ -38,6 +38,7 @@ display_menu :-
     write('1. Human vs Human'), nl,
     write('2. Human vs Computer'), nl,
     write('3. Rules'), nl,
+    write('4. Load Game'), nl,
     write('0. EXIT'), nl, nl,
     write('Choose an option'), nl.
 
