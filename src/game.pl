@@ -33,7 +33,7 @@ handle_option(2, true) :-
 handle_option(3, true) :- 
     nl,
     display_rules,
-    write('Press Enter to get back to the menu...'), nl,
+    write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
     play.
 
@@ -160,7 +160,6 @@ choose_move(1, _GameState, ValidMoves, Move) :-
 choose_move(2, game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, Pieces, Lines, AllowRewardMoveCount), ValidMoves, BestMove) :-
     findall(Value-Move,
         (member(Move, ValidMoves),
-        write('Move: '), write(Move), nl,
          simulate_remove_choice(game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, Pieces, Lines, AllowRewardMoveCount), Move, SimulatedGameState),
          value(SimulatedGameState, CurrentPlayer, Value)),   % Evaluate the state
         MoveValues),
@@ -390,7 +389,8 @@ invalid_move_input :-
 move(game_state(PlayerTypes, first_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), Move, game_state(PlayerTypes, first_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], NewLines, NewAllowPressCount)) :-
     update_board(Board, Move, CurrentPlayer, NewBoard),
     decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
-    check_lines_formed(first_stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
+    get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
+    check_lines_formed(PlayerType, first_stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
     NewLines = UpdatedLines,
     NewAllowPressCount is AllowPressCount + NewLineCount,
     !.
@@ -400,7 +400,8 @@ move(game_state(PlayerTypes, second_stage, Board, CurrentPlayer, [RedCount, Blac
     update_board(Board, Move, CurrentPlayer, NewBoard),
     NewRedCount = RedCount,
     NewBlackCount = BlackCount,
-    check_lines_formed(second_stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
+    get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
+    check_lines_formed(PlayerType, second_stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
     NewLines = UpdatedLines,
     NewAllowRemoveCount is AllowRemoveCount + NewLineCount,
     !.
@@ -436,6 +437,9 @@ press_down(GameState, computer-Level, NewGameState) :-
     valid_moves(GameState, ValidMoves),
     choose_move(GameState, computer-Level, PressMove),
     process_press_down_move(GameState, PressMove, ValidMoves, NewGameState),
+    nl,
+    write('Press ENTER to continue...'), nl,
+    wait_for_enter.
     !.
 
 % process_press_down_move/4 - Processes the press down move based on its validity
@@ -493,8 +497,8 @@ decrement_piece_count(black, RedCount, BlackCount, NewRedCount, NewBlackCount) :
     NewBlackCount is BlackCount - 1,
     NewRedCount = RedCount.
 
-% check_lines_formed/7 - Finds newly formed lines based on the game stage and updates the Lines list
-check_lines_formed(first_stage, Move, Board, Player, ExistingLines, UpdatedLines, NewLineCount) :-
+% check_lines_formed/8 - Finds newly formed lines based on the game stage and updates the Lines list
+check_lines_formed(PlayerType, first_stage, Move, Board, Player, ExistingLines, UpdatedLines, NewLineCount) :-
     straight_lines(AllPossibleLines),
     findall(Line, (
         member(Line, AllPossibleLines),     % Select a possible straight line.
@@ -502,13 +506,13 @@ check_lines_formed(first_stage, Move, Board, Player, ExistingLines, UpdatedLines
         all_in_line(Board, Line, Player)    % Check that all positions in the line belong to the Player.
     ), NewLines),
 
-    print_new_lines(NewLines),
+    print_new_lines(NewLines, PlayerType),
 
     length(NewLines, NewLineCount),         % Count how many new lines were formed
     append(ExistingLines, NewLines, UpdatedLines),
     !.
 
-check_lines_formed(second_stage, Move, Board, Player, ExistingLines, UpdatedLines, NewLineCount) :-
+check_lines_formed(PlayerType, second_stage, Move, Board, Player, ExistingLines, UpdatedLines, NewLineCount) :-
     % Extract the destination position from the move string (e.g., a1b4 -> b4)
     sub_atom(Move, 2, _, 0, Destination),
 
@@ -520,18 +524,30 @@ check_lines_formed(second_stage, Move, Board, Player, ExistingLines, UpdatedLine
         member(Destination, Line)                  % Ensure the moved piece forms the line.
     ), NewLines),
 
-    print_new_lines(NewLines),
+    print_new_lines(NewLines, PlayerType),
 
     length(NewLines, NewLineCount),         % Count how many new lines were formed
     append(ExistingLines, NewLines, UpdatedLines),
     !.
 
-% print_new_lines/1 - Handles the printing of new lines if any are formed
-print_new_lines([]) :- !.  % Do nothing if the list is empty
+% print_new_lines/2 - Handles the printing of new lines if any are formed
+print_new_lines([], human) :- !. % Do nothing
 
-print_new_lines(NewLines) :-
+print_new_lines([], computer-Level) :-
+    nl,
+    write('Press ENTER to continue...'), nl,
+    wait_for_enter.
+
+print_new_lines(NewLines, human) :-
     nl,
     write('New line(s) formed: '), write(NewLines), nl.
+
+print_new_lines(NewLines, computer-Level) :-
+    nl,
+    write('New line(s) formed: '), write(NewLines), nl,
+    nl,
+    write('Press ENTER to continue...'), nl,
+    wait_for_enter.
 
 % all_in_line/3 - Checks if all positions in a line are occupied by the same player
 all_in_line(Board, [Pos1, Pos2, Pos3], Player) :-
@@ -605,6 +621,9 @@ choose_piece_to_remove(GameState, computer-Level, NewGameState) :-
     valid_moves(GameState, ValidMoves),
     choose_move(GameState, computer-Level, Position),
     process_remove_choice(GameState, Position, ValidMoves, NewGameState),
+    nl,
+    write('Press ENTER to continue...'), nl,
+    wait_for_enter.
     !.
 
 % process_remove_choice/4 - Processes the remove choice based on its validity
@@ -697,6 +716,9 @@ remove(GameState, computer-Level, NewGameState) :-
     write('Valid Moves: '), write(ValidMoves), nl, nl,
     choose_move(GameState, computer-Level, RemoveMove),
     process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState),
+    nl,
+    write('Press ENTER to continue...'), nl,
+    wait_for_enter.
     !.
 
 % process_remove_move/4 - Processes the remove move based on its validity
@@ -728,9 +750,7 @@ invalid_remove_input :-
 update_lines(game_state(PlayerTypes, Stage, Board, CurrentPlayer, Pieces, OldLines, AllowRemoveCount), 
              game_state(PlayerTypes, Stage, Board, CurrentPlayer, Pieces, NewLines, AllowRemoveCount)) :-
     straight_lines(StraightLines),
-    findall(Line, (member(Line, StraightLines), all_same_player(Board, Line)), NewLines),
-    write('OldLines: '), write(OldLines), nl,
-    write('NewLines: '), write(NewLines), nl.
+    findall(Line, (member(Line, StraightLines), all_same_player(Board, Line)), NewLines).
 
 % all_same_player/2 - Verifies that all positions in a line are occupied by the same player
 all_same_player(Board, [Pos1, Pos2, Pos3]) :-
