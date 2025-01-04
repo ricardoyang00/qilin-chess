@@ -17,21 +17,26 @@ play :-
 
 % handle_option/2 - Handles the user's menu choice
 handle_option(1, true) :- 
+    nl,
     write('Starting Human vs Human game...'), nl,
     start_game(human, human),
     fail.
 
 handle_option(2, true) :- 
+    nl,
     write('Starting Human vs Computer game...'), nl,
     start_game(human, computer-2),
     fail.
 
 handle_option(3, true) :- 
+    nl,
     display_rules,
     fail.
 
 handle_option(0, false) :-
-    write('Exiting the game. Goodbye!'), nl.
+    nl,
+    write('Exiting the game. Goodbye!'), nl,
+    logo.
 
 handle_option(_, true) :-
     write('Invalid option. Please choose a valid option from 0-3.'), nl,
@@ -49,16 +54,16 @@ start_game(Player1Type, Player2Type) :-
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
 % Initial state changed for debugging issues
-initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [18, 18], [], 0)) :-
+initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [6, 7], [[a1, b2, c3]], 0)) :-
     % Initialize the board with empty positions
     Board = [
-        a1-empty, d1-empty, g1-empty, 
-        b2-empty, d2-empty, f2-empty, 
-        c3-empty, d3-empty, e3-empty,
-        a4-empty, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
-        c5-empty, d5-empty, e5-empty,
-        b6-empty, d6-empty, f6-empty, 
-        a7-empty, d7-empty, g7-empty
+        a1-red, d1-pressed, g1-black, 
+        b2-red, d2-black, f2-black, 
+        c3-red, d3-black, e3-empty,
+        a4-red, b4-red, c4-black, e4-red, f4-black, g4-red, 
+        c5-red, d5-black, e5-red,
+        b6-black, d6-empty, f6-red, 
+        a7-black, d7-red, g7-black
     ].
 
 % get_player_type/3 - Determines the player type based on the current player
@@ -96,7 +101,6 @@ choose_move(1, _GameState, ValidMoves, Move) :-
     write('Level 1 AI chooses move: '), write(Move), nl.
 
 choose_move(2, game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, Pieces, Lines, AllowRewardMoveCount), ValidMoves, BestMove) :-
-    write('Valid Moves: '), write(ValidMoves), nl,
     findall(Value-Move,
         (member(Move, ValidMoves),
         write('Move: '), write(Move), nl,
@@ -265,8 +269,8 @@ potential_line(Board, [Pos1, Pos2, Pos3], Player) :-
 % read_move/3 - Reads a move from the human player based on the game state
 read_move(GameState, Move) :-
     valid_moves(GameState, ValidMoves),
+    write('Valid Moves: '), write(ValidMoves), nl, nl,
     repeat,
-    write('Valid Moves: '), write(ValidMoves), nl,
     write('Enter your move'), nl,
     catch(read(UserInput), _, invalid_move_input),
     skip_line,
@@ -354,7 +358,7 @@ handle_press_down_move(GameStateAfterMove) :-
     GameStateAfterMove = game_state(PlayerTypes, first_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
     AllowPressCount > 0,
     display_game(GameStateAfterMove),
-    write('Moves left to press down: '), write(AllowPressCount), nl,
+    write('Moves left to press down: '), write(AllowPressCount), nl, nl,
     get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
     press_down(GameStateAfterMove, PlayerType, GameStateAfterPress),
     handle_press_down_move(GameStateAfterPress).
@@ -368,8 +372,8 @@ handle_press_down_move(GameStateAfterMove) :-
 % press_down/3 - Allows the current player to press down an opponent's piece
 press_down(GameState, human, NewGameState) :-
     valid_moves(GameState, ValidMoves),
+    write('Valid Moves: '), write(ValidMoves), nl, nl,
     repeat,
-    write('Valid Moves: '), write(ValidMoves), nl,
     write('You formed a line! Choose an opponent\'s piece to press down'), nl,
     catch(read(PressMove), _, invalid_press_down_input),
     skip_line,
@@ -446,12 +450,7 @@ check_lines_formed(first_stage, Move, Board, Player, ExistingLines, UpdatedLines
         all_in_line(Board, Line, Player)    % Check that all positions in the line belong to the Player.
     ), NewLines),
 
-    % Debug: If any new lines are found, print them
-    (NewLines \= [] -> 
-        write('New line(s) formed by '), write(Player), write(': '), write(NewLines), nl
-    ; 
-        write('No new lines formed by '), write(Player), nl
-    ),
+    print_new_lines(NewLines),
 
     length(NewLines, NewLineCount),         % Count how many new lines were formed
     append(ExistingLines, NewLines, UpdatedLines),
@@ -469,17 +468,18 @@ check_lines_formed(second_stage, Move, Board, Player, ExistingLines, UpdatedLine
         member(Destination, Line)                  % Ensure the moved piece forms the line.
     ), NewLines),
 
-    % Debug: If any new lines are found, print them
-    (NewLines \= [] -> 
-        write('New line(s) formed by '), write(Player), write(': '), write(NewLines), nl
-    ; 
-        write('No new lines formed by '), write(Player), nl
-    ),
+    print_new_lines(NewLines),
 
     length(NewLines, NewLineCount),         % Count how many new lines were formed
     write('NewLineCount: '), write(NewLineCount), nl,
     append(ExistingLines, NewLines, UpdatedLines),
     !.
+
+% print_new_lines/1 - Handles the printing of new lines if any are formed
+print_new_lines([]) :- !.  % Do nothing if the list is empty
+
+print_new_lines(NewLines) :-
+    write('New line(s) formed: '), write(NewLines), nl.
 
 % all_in_line/3 - Checks if all positions in a line are occupied by the same player
 all_in_line(Board, [Pos1, Pos2, Pos3], Player) :-
@@ -541,8 +541,8 @@ remove_all_pressed([Other | Rest], [Other | NewRest], PressedFound) :-
 choose_piece_to_remove(GameState, human, NewGameState) :-
     valid_moves(GameState, ValidMoves),  % Get the player's own pieces
     GameState = game_state(PlayerTypes, Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
+    write('Valid Moves: '), write(ValidMoves), nl, nl,
     repeat,
-    write('Valid Moves: '), write(ValidMoves), nl,
     write('Choose a piece to remove'), nl,
     catch(read(Position), _, invalid_remove_choice_input),
     skip_line,
@@ -619,7 +619,7 @@ handle_remove_move(GameStateAfterMove, GameStateAfterRemove) :-
     GameStateAfterMove = game_state(PlayerTypes, second_stage, Board, CurrentPlayer, Pieces, Lines, AllowRemoveCount),
     AllowRemoveCount > 0,
     display_game(GameStateAfterMove),
-    write('Moves left to remove: '), write(AllowRemoveCount), nl,
+    write('Moves left to remove: '), write(AllowRemoveCount), nl, nl,
     get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
     remove(GameStateAfterMove, PlayerType, TempGameStateAfterRemove),
     handle_remove_move(TempGameStateAfterRemove, GameStateAfterRemove).
@@ -632,8 +632,8 @@ handle_remove_move(GameStateAfterMove, GameStateAfterRemove) :-
 % remove/3 - Allows the current player to remove an opponent's piece
 remove(GameState, human, NewGameState) :-
     valid_moves(GameState, ValidMoves),
+    write('Valid Moves: '), write(ValidMoves), nl, nl,
     repeat,
-    write('Valid Moves: '), write(ValidMoves), nl,
     write('You formed a line! Choose an opponent\'s piece to remove'),
     catch(read(RemoveMove), _, invalid_remove_input),
     skip_line,
@@ -642,7 +642,7 @@ remove(GameState, human, NewGameState) :-
 
 remove(GameState, computer-Level, NewGameState) :-
     valid_moves(GameState, ValidMoves),
-    write('Valid Moves: '), write(ValidMoves), nl,
+    write('Valid Moves: '), write(ValidMoves), nl, nl,
     choose_move(GameState, computer-Level, RemoveMove),
     process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState),
     !.
