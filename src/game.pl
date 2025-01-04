@@ -284,8 +284,8 @@ read_move(GameState, Move) :-
     valid_moves(GameState, ValidMoves),
     repeat,
     write('Valid Moves: '), write(ValidMoves), nl,
-    write('Enter your move: '),
-    read(UserInput),
+    write('Enter your move'), nl,
+    catch(read(UserInput), _, invalid_move_input),
     skip_line,
     process_move(UserInput, ValidMoves, Move),
     !.
@@ -318,20 +318,28 @@ valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, 0), ListOfMo
 
 % process_move/3 - Processes user input as a move
 process_move(Move, ValidMoves, Move) :-
+    atom(Move),
     atom_length(Move, 2),
     valid_position(Move),
-    memberchk(Move, ValidMoves).
+    memberchk(Move, ValidMoves),
+    !.
 
 process_move(Move, ValidMoves, Move) :-
+    atom(Move),
     atom_length(Move, 4),
     sub_atom(Move, 0, 2, _, From),
     sub_atom(Move, 2, 2, 0, To),
     valid_position(From),
     valid_position(To),
-    memberchk(Move, ValidMoves).
+    memberchk(Move, ValidMoves),
+    !.
 
 process_move(_, _, _) :-
-    write('Invalid move. Please try again.'), nl,
+    invalid_move_input.
+
+% invalid_move_input/0 - Handles invalid move input
+invalid_move_input :-
+    write('Invalid move. Please try again.'), nl, nl,
     fail.
 
 % move/3 - Validates and executes a move for the first stage
@@ -375,8 +383,8 @@ press_down(GameState, human, NewGameState) :-
     valid_moves(GameState, ValidMoves),
     repeat,
     write('Valid Moves: '), write(ValidMoves), nl,
-    write('You formed a line! Choose an opponent\'s piece to press down: '),
-    read(PressMove),
+    write('You formed a line! Choose an opponent\'s piece to press down'), nl,
+    catch(read(PressMove), _, invalid_press_down_input),
     skip_line,
     process_press_down_move(GameState, PressMove, ValidMoves, NewGameState),
     !.
@@ -389,6 +397,7 @@ press_down(GameState, computer-Level, NewGameState) :-
 
 % process_press_down_move/4 - Processes the press down move based on its validity
 process_press_down_move(GameState, PressMove, ValidMoves, NewGameState) :-
+    atom(PressMove),
     valid_position(PressMove),
     memberchk(PressMove, ValidMoves),
     GameState = game_state(PlayerTypes, first_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
@@ -399,7 +408,11 @@ process_press_down_move(GameState, PressMove, ValidMoves, NewGameState) :-
     NewGameState = game_state(PlayerTypes, first_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], Lines, NewAllowPressCount).
 
 process_press_down_move(_, _, _, _) :-
-    write('Invalid press down move. Please try again.'), nl,
+    invalid_press_down_input.
+
+% invalid_press_down_input/0 - Handles invalid press down input
+invalid_press_down_input :-
+    write('Invalid press down move. Please try again.'), nl, nl,
     fail.
 
 % update_board/4 - Updates the board with the player's move or maintains the state if no update
@@ -539,8 +552,8 @@ choose_piece_to_remove(GameState, human, NewGameState) :-
     GameState = game_state(PlayerTypes, Stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount),
     repeat,
     write('Valid Moves: '), write(ValidMoves), nl,
-    write(CurrentPlayer), write(', choose a piece to remove: '), nl,
-    read(Position),
+    write(Choose a piece to remove'), nl,
+    catch(read(Position), _, invalid_remove_choice_input),
     skip_line,
     process_remove_choice(GameState, Position, ValidMoves, NewGameState),
     !.
@@ -553,6 +566,7 @@ choose_piece_to_remove(GameState, computer-Level, NewGameState) :-
 
 % process_remove_choice/4 - Processes the remove choice based on its validity
 process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
+    atom(Position),
     valid_position(Position),
     memberchk(Position, ValidMoves),
     GameState = game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, Pieces, Lines, AllowPressCount),
@@ -560,6 +574,10 @@ process_remove_choice(GameState, Position, ValidMoves, NewGameState) :-
     NewGameState = game_state(PlayerTypes, transition_stage, NewBoard, CurrentPlayer, Pieces, Lines, AllowPressCount).
 
 process_remove_choice(_, _, _, _) :-
+    invalid_remove_choice_input.
+
+% invalid_remove_choice_input/0 - Handles invalid remove choice input
+invalid_remove_choice_input :-
     write('Invalid choice. Please try again.'), nl,
     fail.
 
@@ -622,8 +640,8 @@ remove(GameState, human, NewGameState) :-
     valid_moves(GameState, ValidMoves),
     repeat,
     write('Valid Moves: '), write(ValidMoves), nl,
-    write('You formed a line! Choose an opponent\'s piece to remove: '),
-    read(RemoveMove),
+    write('You formed a line! Choose an opponent\'s piece to remove'),
+    catch(read(RemoveMove), _, invalid_remove_input),
     skip_line,
     process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState),
     !.
@@ -637,6 +655,7 @@ remove(GameState, computer-Level, NewGameState) :-
 
 % process_remove_move/4 - Processes the remove move based on its validity
 process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState) :-
+    atom(RemoveMove),
     valid_position(RemoveMove),
     memberchk(RemoveMove, ValidMoves),
     GameState = game_state(PlayerTypes, second_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowRemoveCount),
@@ -647,6 +666,10 @@ process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState) :-
     NewGameState = game_state(PlayerTypes, second_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], Lines, NewAllowRemoveCount).
 
 process_remove_move(_, _, _, _) :-
+    invalid_remove_input.
+
+% invalid_remove_input/0 - Handles invalid remove input
+invalid_remove_input :-
     write('Invalid remove move. Please try again.'), nl,
     fail.
 
