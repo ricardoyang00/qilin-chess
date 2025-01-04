@@ -33,11 +33,29 @@ logo :-
 display_menu :-
     logo,
     nl, nl, nl, nl, nl,
-    write('--- Qilin Chess Menu ---'), nl,
+    write('--- Qilin Chess Menu ---'), nl, nl,
     write('1. Human vs Human'), nl,
     write('2. Human vs Computer'), nl,
     write('3. Rules'), nl,
     write('0. EXIT'), nl, nl,
+    write('Choose an option'), nl.
+
+display_difficulty_selection :-
+    logo, 
+    nl, nl, nl, nl, nl,
+    write('--- Choose AI Difficulty ---'), nl, nl,
+    write('1. Easy'), nl,
+    write('2. Hard'), nl,
+    write('0. Back to Menu'), nl, nl,
+    write('Choose an option'), nl.
+
+display_color_selection :-
+    logo,
+    nl, nl, nl, nl, nl,
+    write('--- Choose Your Player ---'), nl, nl,
+    write('1. Red'), nl,
+    write('2. Black'), nl,
+    write('0. Back to Difficulty Selection'), nl, nl,
     write('Choose an option'), nl.
 
 display_rules :-

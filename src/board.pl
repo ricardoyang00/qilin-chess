@@ -31,7 +31,7 @@ display_game(game_state(PlayerTypes, Stage, Board, CurrentPlayer, Pieces, Lines,
     write('   | +                      |                      + |   '), nl,
     write('1  '), print_cell(Board, a1), write('------------------------'), print_cell(Board, d1), write('------------------------'), print_cell(Board, g1), nl, 
     nl,
-    write('   a       b        c       d       e        f       g   '), 
+    write('   a       b        c       d       e        f       g   '), nl,
     nl,
     draw_current_player_box(CurrentPlayer),
     nl.

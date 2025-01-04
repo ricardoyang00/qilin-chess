@@ -24,14 +24,18 @@ handle_option(1, true) :-
 
 handle_option(2, true) :- 
     nl,
-    write('Starting Human vs Computer game...'), nl,
-    start_game(human, computer-2),
+    display_difficulty_selection,
+    catch(read(Difficulty), _, invalid_menu_input),
+    skip_line,
+    handle_difficulty(Difficulty),
     fail.
 
 handle_option(3, true) :- 
     nl,
     display_rules,
-    fail.
+    write('Press Enter to get back to the menu...'), nl,
+    wait_for_enter,
+    play.
 
 handle_option(0, false) :-
     nl,
@@ -46,6 +50,58 @@ handle_option(_, true) :-
 invalid_menu_input :-
     write('Invalid input. Please enter a number between 0 and 3.'), nl,
     fail.
+
+% handle_difficulty/1 - Handles the difficulty selection
+handle_difficulty(0) :-
+    play.
+
+handle_difficulty(1) :-
+    nl,
+    display_color_selection,
+    catch(read(Color), _, invalid_menu_input),
+    skip_line,
+    handle_color(Color, 1).
+
+handle_difficulty(2) :-
+    nl,
+    display_color_selection,
+    catch(read(Color), _, invalid_menu_input),
+    skip_line,
+    handle_color(Color, 2).
+
+handle_difficulty(_) :-
+    write('Invalid option. Please choose a valid option from 0-2.'), nl,
+    handle_option(2, true).
+    
+% handle_color/2 - Handles the color selection
+handle_color(0, Level) :-
+    handle_difficulty(Level).
+
+handle_color(1, Level) :-
+    nl,
+    write('Starting Human vs Computer game...'), nl,
+    start_game(human, computer-Level),
+    fail.
+
+handle_color(2, Level) :-
+    nl,
+    write('Starting Computer vs Human game...'), nl,
+    start_game(computer-Level, human),
+    fail.
+
+handle_color(_, Level) :-
+    write('Invalid option. Please choose a valid option from 0-3.'), nl,
+    handle_difficulty(Level).
+
+% wait_for_enter/0 - Waits for the user to press Enter
+wait_for_enter :-
+    get_char(Char),
+    handle_char(Char).
+
+% handle_char/1 - Handles the character input
+handle_char('\n') :- !.
+handle_char(_) :-
+    wait_for_enter.
 
 % start_game/2 - Starts the game with the given player types
 start_game(Player1Type, Player2Type) :-
@@ -93,6 +149,7 @@ choose_move(GameState, human, Move) :-
 
 choose_move(GameState, computer-Level, Move) :-
     valid_moves(GameState, ValidMoves),
+    write('Valid Moves: '), write(ValidMoves), nl, nl,
     choose_move(Level, GameState, ValidMoves, Move).
 
 % choose_move/4 - Chooses a move for the computer based on the difficulty level
@@ -121,8 +178,6 @@ choose_move(2, game_state(PlayerTypes, transition_stage, Board, CurrentPlayer, P
     % Randomly select one of the best moves
     random_member(BestMove, BestMoves),
 
-    write('Reversed Value-Move pairs: '), write(ReversedMoveValues), nl,
-    write('Best Moves: '), write(BestMoves), nl,
     write('Level 2 AI chooses move: '), write(BestMove), nl.
 
 choose_move(2, GameState, ValidMoves, BestMove) :-
@@ -211,16 +266,13 @@ value(game_state(_, first_stage, Board, CurrentPlayer, _, Lines, 0), CurrentPlay
 value(game_state(_, second_stage, Board, CurrentPlayer, _, Lines, _), CurrentPlayer, Value) :-
     % Count lines formed by the current player
     count_lines(Board, CurrentPlayer, CurrentPlayerLines),
-    write('CountLines: '), write(CurrentPlayerLines), nl,
 
     % Count potential lines for the opponent
     next_player(CurrentPlayer, Opponent),
     count_potential_lines(Board, Opponent, OpponentPotentialLines),
-    write('CountPotentialLines: '), write(OpponentPotentialLines), nl,
 
     % Count potential lines for the current player
     count_potential_lines(Board, CurrentPlayer, CurrentPlayerPotentialLines),
-    write('CurrentPlayerPotentialLines: '), write(CurrentPlayerPotentialLines), nl,
 
     % Evaluate mobility for the current player
     valid_moves(game_state(_, second_stage, Board, CurrentPlayer, _, _, 0), CurrentPlayerMoves),
@@ -471,7 +523,6 @@ check_lines_formed(second_stage, Move, Board, Player, ExistingLines, UpdatedLine
     print_new_lines(NewLines),
 
     length(NewLines, NewLineCount),         % Count how many new lines were formed
-    write('NewLineCount: '), write(NewLineCount), nl,
     append(ExistingLines, NewLines, UpdatedLines),
     !.
 
@@ -479,6 +530,7 @@ check_lines_formed(second_stage, Move, Board, Player, ExistingLines, UpdatedLine
 print_new_lines([]) :- !.  % Do nothing if the list is empty
 
 print_new_lines(NewLines) :-
+    nl,
     write('New line(s) formed: '), write(NewLines), nl.
 
 % all_in_line/3 - Checks if all positions in a line are occupied by the same player
