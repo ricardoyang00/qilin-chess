@@ -26,7 +26,3 @@ test_all_colors :-
     write_colored_text(magenta, 'This is magenta text'),
     write_colored_text(cyan, 'This is cyan text'),
     write_colored_text(white, 'This is white text').
-
-% Example usage
-example_usage :-
-    test_all_colors.

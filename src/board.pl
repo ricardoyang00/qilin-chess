@@ -41,6 +41,7 @@ print_cell(Board, Position) :-
     memberchk(Position-Cell, Board),
     print_cell_content(Cell).
 
+% print_cell_content/1 - Prints the content of a cell
 print_cell_content(empty) :-
     write('#').
 
@@ -51,7 +52,7 @@ print_cell_content(black) :-
     write_colored_text(green, 'B').
 
 print_cell_content(pressed) :-
-    write_colored_text(magenta, 'P').
+    write_colored_text(yellow, 'P').
 
 % draw_stage_box/1 - Draws the box for the current game stage
 draw_stage_box(Stage) :-
@@ -138,7 +139,7 @@ draw_middle_line(black) :-
     draw_spaces(15),
     put_code(9553), nl.
 
-% draw_regular_line/0 - Draws a regular line without the current player
+% draw_regular_line/0 - Draws a regular line without the text in the middle
 draw_regular_line :-
     put_code(9553), % Draw the left vertical line
     draw_spaces(52),
