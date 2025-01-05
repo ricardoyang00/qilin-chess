@@ -251,7 +251,7 @@ choose_move(2, GameState, ValidMoves, BestMove) :-
     random_member(BestMove, BestMoves),
 
     % write('Reversed Value-Move pairs: '), write(ReversedMoveValues), nl, nl,
-    % write('Best Move(s): '), write(BestMoves), nl, nl,
+    write('Best Move(s): '), write(BestMoves), nl, nl,
 
     write('Level 2 AI chooses move: '), write(BestMove), nl.
 

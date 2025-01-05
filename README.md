@@ -1,9 +1,4 @@
 # Qilin Chess
-
-<p align="center">
-  <img src="img/logo.svg" style="width: 50%; height: auto;">
-</p>
-
 [Qilin Chess](https://baike.baidu.com/item/%E9%BA%92%E9%BA%9F%E6%A3%8B/58965173) (麒麟棋) is based on the national intangible cultural heritage project **"Haifeng Qilin Dance"** in Shanwei City. The front view and side view of the Qilin are used to distinguish the `red` and `black` sides. There are two ways to play Qilin chess, `"XiaSanZi"` (下三子) and `"XingJiuGong"` (行九宫).
 
 Qilin Chess' XiaSanZi is based on [ChengSan Chess](https://baike.baidu.com/item/%E6%88%90%E4%B8%89%E6%A3%8B/241145?fromModule=lemma_inlink) is based on [LiuZiChong Chess](https://baike.baidu.com/item/%E5%85%AD%E5%AD%90%E5%86%B2%E6%A3%8B/15738197?fromModule=lemma_inlink).
@@ -26,7 +21,7 @@ We collaborated on the entire game development process, continuously exchanging 
 ### Windows SICStus Prolog Console
 - **Font:** Andale Mono
 - **Font Style:** Regular
-- **Size:** 12
+- **Size:** 10
 - Note: Although the game includes some simple color features, the console may not support displaying colors.
 
 ### Linux SICStus Prolog (using eclipse)
@@ -45,7 +40,9 @@ We collaborated on the entire game development process, continuously exchanging 
 
 - The chessboard is composed of three nested squares and lines connecting the centers of the sides of the squares.
 
-    ![board](img/board.png)
+    <p align="left">
+      <img src="img/board_prolog.png" style="width: 50%; height: auto;">
+    </p>
 
 - There are `24 spots` on the chessboard where you can place your pieces.
 - Each side has `18 chess pieces`.
@@ -123,7 +120,9 @@ Computer moves are handled by the `choose_move(+Level, +GameState, +ValidMoves, 
 
 The function then sorts the list of `MoveValues`, where each element is `Value-Move`, in descending order and selects the move with the highest value. If there are multiple moves with the highest value, it randomly selects one from those moves.
 
-![ComputerMove](img/computer_move.png)
+<p align="left">
+  <img src="img/computer_move.png" style="width: 70%; height: auto;">
+</p>
 
 ### User Interaction
 Using the `validate_input(+Input, -Output)` function along with repeat-fail loops and `catch(read, _, handle_error)`, we prevent Prolog's error messages from being displayed in case of invalid symbol inputs. Additionally, for uppercase inputs (considered as variables), we ensure that the functions do not run with a variable but correctly with an atom or number.
