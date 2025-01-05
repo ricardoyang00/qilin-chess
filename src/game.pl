@@ -61,12 +61,12 @@ handle_option(0) :-
     halt.
 
 handle_option(_) :-
-    write('Invalid option. Please choose a valid option from 0-3.'), nl,
+    write('Invalid option. Please choose a valid option from 0-4.'), nl,
     fail.
 
 % invalid_menu_input/0 - Handles invalid menu input
 invalid_menu_input :-
-    write('Invalid input. Please enter a number between 0 and 3.'), nl,
+    write('Invalid input. Please enter a number between 0 and 4.'), nl,
     fail.
 
 % handle_difficulty/1 - Handles the difficulty selection
