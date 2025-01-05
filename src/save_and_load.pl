@@ -15,7 +15,9 @@ save_game(GameState) :-
     write(Stream, GameState),
     write(Stream, '.'),
     close(Stream),
-    write('Game saved successfully to: '), write(Filename), nl.
+    write('Game saved successfully to: '), write(Filename), nl,
+    write('Returning back to menu...'), nl,
+    !.
 
 % load_game/1 - Loads the game state from a file
 load_game(GameState) :-
@@ -37,7 +39,8 @@ load_game(GameState) :-
     % If the file opens successfully, read the game state
     read(Stream, GameState),
     close(Stream),
-    write('Game loaded successfully from: '), write(Filename), nl.
+    write('Game loaded successfully from: '), write(Filename), nl,
+    !.
 
 % file_exists_check/1 - Checks if the file exists
 file_exists_check(Filename) :-
@@ -66,10 +69,13 @@ handle_open_file_error :-
 % start_game_from_state/1 - Starts the game from the loaded state
 start_game_from_state(GameState) :-
     GameState = game_state(_PlayerTypes, Stage, _Board, _CurrentPlayer, _Pieces, _Lines, _AllowRewardMoveCount),
-    start_game_from_stage(Stage, GameState).
+    start_game_from_stage(Stage, GameState),
+    !.
 
 % start_game_from_stage/2 - Helper predicate to start the game based on the stage
 start_game_from_stage(first_stage, GameState) :-
-    first_stage_loop(GameState).
+    first_stage_loop(GameState),
+    !.
 start_game_from_stage(second_stage, GameState) :-
-    second_stage_loop(GameState).
+    second_stage_loop(GameState),
+    !.

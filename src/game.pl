@@ -29,6 +29,7 @@ handle_option(1) :-
     nl,
     write('Starting Human vs Human game...'), nl,
     start_game(human, human),
+    !,
     fail.
 
 handle_option(2) :- 
@@ -36,8 +37,9 @@ handle_option(2) :-
     display_difficulty_selection,
     catch(read(Difficulty), _, invalid_menu_input),
     skip_line,
-    handle_difficulty(Difficulty),
-    fail.
+    validate_input(Difficulty, ValidatedDifficulty),
+    handle_difficulty(ValidatedDifficulty),
+    !.
 
 handle_option(3) :- 
     nl,
@@ -51,26 +53,25 @@ handle_option(4) :-
     nl,
     load_game(GameState),
     start_game_from_state(GameState),
-    fail.
+    !.
 
 handle_option(0) :-
     nl,
     write('Exiting the game. Goodbye!'), nl,
     logo,
-    !,
-    halt.
+    !.
 
-handle_option(_) :-
-    write('Invalid option. Please choose a valid option from 0-4.'), nl,
-    fail.
-
+handle_valid_option(_) :-
+    invalid_menu_input.
+    
 % invalid_menu_input/0 - Handles invalid menu input
 invalid_menu_input :-
-    write('Invalid input. Please enter a number between 0 and 4.'), nl,
+    write('Invalid input. Please enter a valid option.'), nl,
     fail.
 
 % handle_difficulty/1 - Handles the difficulty selection
 handle_difficulty(0) :-
+    !,
     play.
 
 handle_difficulty(1) :-
@@ -78,39 +79,48 @@ handle_difficulty(1) :-
     display_color_selection,
     catch(read(Color), _, invalid_menu_input),
     skip_line,
-    handle_color(Color, 1).
+    validate_input(Color, ValidatedColor),
+    handle_color(ValidatedColor, 1),
+    !.
 
 handle_difficulty(2) :-
     nl,
     display_color_selection,
     catch(read(Color), _, invalid_menu_input),
     skip_line,
-    handle_color(Color, 2).
+    validate_input(Color, ValidatedColor),
+    handle_color(ValidatedColor, 2),
+    !.
 
 handle_difficulty(_) :-
-    write('Invalid option. Please choose a valid option from 0-2.'), nl,
-    handle_option(2).
+    write('Returning back to menu...'), nl,
+    !,
+    fail.
     
 % handle_color/2 - Handles the player selection
 % back to select difficulty
 handle_color(0, _Level) :-
+    !,
     handle_option(2).
 
 handle_color(1, Level) :-
     nl,
     write('Starting Human vs Computer game...'), nl,
     start_game(human, computer-Level),
+    !,
     fail.
 
 handle_color(2, Level) :-
     nl,
     write('Starting Computer vs Human game...'), nl,
     start_game(computer-Level, human),
+    !,
     fail.
 
-handle_color(_, Level) :-
-    write('Invalid option. Please choose a valid option from 0-3.'), nl,
-    handle_difficulty(Level).
+handle_color(_, _Level) :-
+    write('Returning back to difficulty selection...'), nl,
+    !,
+    fail.
 
 % wait_for_enter/0 - Waits for the user to press Enter
 wait_for_enter :-
@@ -128,16 +138,17 @@ start_game(Player1Type, Player2Type) :-
     first_stage_loop(GameState).
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
-initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [18, 18], [], 0)) :-
+% Initial state changed for debugging issues
+initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [7, 7], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
-        a1-empty, d1-empty, g1-empty, 
-        b2-empty, d2-empty, f2-empty, 
-        c3-empty, d3-empty, e3-empty,
-        a4-empty, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
-        c5-empty, d5-empty, e5-empty,
-        b6-empty, d6-empty, f6-empty, 
-        a7-empty, d7-empty, g7-empty
+        a1-red, d1-red, g1-black, 
+        b2-black, d2-black, f2-red, 
+        c3-red, d3-black, e3-empty,
+        a4-black, b4-red, c4-black, e4-red, f4-black, g4-red, 
+        c5-red, d5-black, e5-red,
+        b6-black, d6-empty, f6-red, 
+        a7-black, d7-red, g7-black
     ].
 
 % /////////////////////////////////////////////////////////////////////
@@ -372,7 +383,8 @@ read_move(GameState, Move) :-
     write('Enter your move'), nl,
     catch(read(UserInput), _, invalid_move_input),
     skip_line,
-    process_move(UserInput, ValidMoves, Move, GameState),
+    validate_input(UserInput, ValidatedInput),
+    process_move(ValidatedInput, ValidMoves, Move, GameState),
     !.
 
 % valid_moves/2 - Returns a list of all possible valid moves in transition stage
@@ -414,16 +426,14 @@ process_move(Input, _ValidMoves, _Move, game_state(_PlayerTypes, _Stage, _Board,
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
-    !,
-    play.
+    !.
 
 process_move(Input, _ValidMoves, _Move, GameState) :-
     validate_input(Input, ValidatedInput),
     ValidatedInput = save,
 
     save_game(GameState),
-    !,
-    play.
+    !.
 
 % process_move/4 - Processes user input as a move of the type a1
 process_move(Input, ValidMoves, Move, _GameState) :-
@@ -524,16 +534,13 @@ press_down(GameState, computer-Level, NewGameState) :-
     !.
 
 % process_press_down_move/4 - Ends the game if user inputs forfeit.
-process_press_down_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowPressCount), Input, _ValidMoves, _NewGameState) :-
+process_press_down_move(_GameState, Input, _ValidMoves, _NewGameState) :-
     validate_input(Input, ValidatedInput),
     ValidatedInput = forfeit,
 
-    next_player(CurrentPlayer, Winner),
-    game_over_display(Winner), nl,
-    write('Press ENTER to get back to the menu...'), nl,
-    wait_for_enter,
+    write('Forfeiting is not supported in the current state.'), nl, nl,
     !,
-    play.
+    fail.
 
 process_press_down_move(_GameState, Input, _ValidMoves, _NewGameState) :-
     validate_input(Input, ValidatedInput),
@@ -738,16 +745,13 @@ choose_piece_to_remove(GameState, computer-Level, NewGameState) :-
     !.
 
 % process_remove_choice/4 - Processes the remove choice based on its validity
-process_remove_choice(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount), Input, _ValidMoves, _NewGameState) :-
+process_remove_choice(_GameState, Input, _ValidMoves, _NewGameState) :-
     validate_input(Input, ValidatedInput),
     ValidatedInput = forfeit,
 
-    next_player(CurrentPlayer, Winner),
-    game_over_display(Winner), nl,
-    write('Press ENTER to get back to the menu...'), nl,
-    wait_for_enter,
+    write('Forfeiting is not supported in the transition state.'), nl, nl,
     !,
-    play.
+    fail.
 
 process_remove_choice(_GameState, Input, _ValidMoves, _NewGameState) :-
     validate_input(Input, ValidatedInput),
@@ -770,7 +774,7 @@ process_remove_choice(_GameState, _Position, _ValidMoves, _NewGameState) :-
 
 % invalid_remove_choice_input/0 - Handles invalid remove choice input
 invalid_remove_choice_input :-
-    write('Invalid choice. Please try again.'), nl,
+    write('Invalid choice. Please try again.'), nl, nl,
     fail.
 
 % count_pieces/3 - Recursively counts the number of pieces of a given player on the board
@@ -793,11 +797,10 @@ second_stage_loop(GameState) :-
     display_game(GameState),
     game_over(GameState, Winner),
     !,
-    write('GAME OVER, WINNER IS: '), write(Winner), nl, nl,
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
-    play.
+    !.
 
 % second_stage_loop/1 - If current player has no moves left, game over
 second_stage_loop(GameState) :-
@@ -805,12 +808,14 @@ second_stage_loop(GameState) :-
     valid_moves(GameState, []),  % No valid moves left
     write('Valid Moves: []'), nl, nl,
     write('YOU HAVE NO VALID MOVES LEFT'), nl, nl,
+    write('Press ENTER to continue...'), nl,
+    wait_for_enter,
+    !,
     next_player(CurrentPlayer, Winner),
     game_over_display(Winner), nl,
     write('Press ENTER to get back to the menu...'), nl,
     wait_for_enter,
-    !,
-    play.
+    !.
     
 second_stage_loop(GameState) :-
     GameState = game_state(PlayerTypes, second_stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount),
@@ -856,7 +861,6 @@ remove(GameState, human, NewGameState) :-
 
 remove(GameState, computer-Level, NewGameState) :-
     valid_moves(GameState, ValidMoves),
-    write('Valid Moves: '), write(ValidMoves), nl, nl,
     choose_move(GameState, computer-Level, RemoveMove),
     process_remove_move(GameState, RemoveMove, ValidMoves, NewGameState),
     nl,
@@ -865,16 +869,13 @@ remove(GameState, computer-Level, NewGameState) :-
     !.
 
 % process_remove_move/4 - Processes the remove move based on its validity
-process_remove_move(game_state(_PlayerTypes, _Stage, _Board, CurrentPlayer, _Pieces, _Lines, _AllowRemoveCount), Input, _ValidMoves, _NewGameState) :-
+process_remove_move(_GameState, Input, _ValidMoves, _NewGameState) :-
     validate_input(Input, ValidatedInput),
     ValidatedInput = forfeit,
     
-    next_player(CurrentPlayer, Winner),
-    game_over_display(Winner), nl,
-    write('Press ENTER to get back to the menu...'), nl,
-    wait_for_enter,
+    write('Forfeiting is not supported in the current state.'), nl, nl,
     !,
-    play.
+    fail.
 
 process_remove_move(_GameState, Input, _ValidMoves, _NewGameState) :-
     validate_input(Input, ValidatedInput),
@@ -900,7 +901,7 @@ process_remove_move(_GameState, _RemoveMove, _ValidMoves, _NewGameState) :-
 
 % invalid_remove_input/0 - Handles invalid remove input
 invalid_remove_input :-
-    write('Invalid remove move. Please try again.'), nl,
+    write('Invalid remove move. Please try again.'), nl, nl,
     fail.
 
 % update_lines/2 - Updates the Lines in the game state based on the current board
