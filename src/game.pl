@@ -462,7 +462,8 @@ invalid_move_input :-
 
 % move/3 - Validates and executes a move for the first stage
 move(game_state(PlayerTypes, first_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowPressCount), Move, game_state(PlayerTypes, first_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], NewLines, NewAllowPressCount)) :-
-    update_board(Board, Move, CurrentPlayer, NewBoard),
+    validate_input(Move, ValidatedMove),
+    update_board(Board, ValidatedMove, CurrentPlayer, NewBoard),
     decrement_piece_count(CurrentPlayer, RedCount, BlackCount, NewRedCount, NewBlackCount),
     get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
     check_lines_formed(false, PlayerType, first_stage, Move, NewBoard, CurrentPlayer, Lines, UpdatedLines, NewLineCount),
@@ -472,7 +473,8 @@ move(game_state(PlayerTypes, first_stage, Board, CurrentPlayer, [RedCount, Black
 
 % move/3 - Validates and executes a move for the second stage
 move(game_state(PlayerTypes, second_stage, Board, CurrentPlayer, [RedCount, BlackCount], Lines, AllowRemoveCount), Move, game_state(PlayerTypes, second_stage, NewBoard, CurrentPlayer, [NewRedCount, NewBlackCount], NewLines, NewAllowRemoveCount)) :-
-    update_board(Board, Move, CurrentPlayer, NewBoard),
+    validate_input(Move, ValidatedMove),
+    update_board(Board, ValidatedMove, CurrentPlayer, NewBoard),
     NewRedCount = RedCount,
     NewBlackCount = BlackCount,
     get_player_type(CurrentPlayer, PlayerTypes, PlayerType),
