@@ -138,17 +138,16 @@ start_game(Player1Type, Player2Type) :-
     first_stage_loop(GameState).
 
 % initial_state/2 - Sets up the initial game state with 18 pieces per player
-% Initial state changed for debugging issues
-initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [7, 7], [], 0)) :-
+initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [18, 18], [], 0)) :-
     % Initialize the board with empty positions
     Board = [
-        a1-red, d1-red, g1-black, 
-        b2-black, d2-black, f2-red, 
-        c3-red, d3-black, e3-empty,
-        a4-black, b4-red, c4-black, e4-red, f4-black, g4-red, 
-        c5-red, d5-black, e5-red,
-        b6-black, d6-empty, f6-red, 
-        a7-black, d7-red, g7-black
+        a1-empty, d1-empty, g1-empty, 
+        b2-empty, d2-empty, f2-empty, 
+        c3-empty, d3-empty, e3-empty,
+        a4-empty, b4-empty, c4-empty, e4-empty, f4-empty, g4-empty, 
+        c5-empty, d5-empty, e5-empty,
+        b6-empty, d6-empty, f6-empty, 
+        a7-empty, d7-empty, g7-empty
     ].
 
 % /////////////////////////////////////////////////////////////////////
@@ -274,11 +273,9 @@ value(game_state(_PlayerTypes, transition_stage, Board, CurrentPlayer, _Pieces, 
     % Count potential lines for the opponent
     next_player(CurrentPlayer, Opponent),
     count_potential_lines(Board, Opponent, OpponentPotentialLines),
-    write('CountPotentialLines: '), write(OpponentPotentialLines), nl,
 
     % Count potential lines for the current player
     count_potential_lines(Board, CurrentPlayer, CurrentPlayerPotentialLines),
-    write('CurrentPlayerPotentialLines: '), write(CurrentPlayerPotentialLines), nl,
 
     % Evaluate mobility for the current player
     valid_moves(game_state(_, transition_stage, Board, CurrentPlayer, _, _, 0), CurrentPlayerMoves),
