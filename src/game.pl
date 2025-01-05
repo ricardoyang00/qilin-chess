@@ -145,8 +145,11 @@ start_game(Player1Type, Player2Type) :-
     initial_state([Player1Type, Player2Type], GameState),
     first_stage_loop(GameState).
 
-% initial_state/2 - Sets up the initial game state with 18 pieces per player
-initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type], first_stage, Board, red, [18, 18], [], 0)) :-
+% initial_state/2 - Sets up the initial game state with the player types (human/computer-level), first stage of the game,
+%                   red starts, 18 pieces per player, 0 lines formed and 0 reward move counts
+initial_state([Player1Type, Player2Type], game_state(PlayerTypes, Stage, Board, CurrentPlayer, Pieces, Lines, AllowRewardMoveCount)) :-
+    PlayerTypes = [Player1Type, Player2Type],
+    Stage = first_stage,
     % Initialize the board with empty positions
     Board = [
         a1-empty, d1-empty, g1-empty, 
@@ -156,7 +159,11 @@ initial_state([Player1Type, Player2Type], game_state([Player1Type, Player2Type],
         c5-empty, d5-empty, e5-empty,
         b6-empty, d6-empty, f6-empty, 
         a7-empty, d7-empty, g7-empty
-    ].
+    ],
+    CurrentPlayer = red,
+    Pieces = [18, 18],
+    Lines = [],
+    AllowRewardMoveCount = 0.
 
 % /////////////////////////////////////////////////////////////////////
     
