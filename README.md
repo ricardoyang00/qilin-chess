@@ -92,9 +92,6 @@ The game state is represented by the `display(+GameState)` function. It draws a 
 
 The `update_board(+Board, +Move, +NewState, +NewBoard)` function allows us to update the cells on the board, changing `Position-Cell` to `Position-NewState`. The `NewState` can represent a red piece, black piece, pressed piece, or an empty cell. The next time `display(+GameState)` is called, it will render the updated board.
 
-**Include examples of representations of initial, intermediate, and
-final game states IMAGES HERE**
-
 ### Move Representation
 Initially, we needed to use the `valid_moves(+GameState, -ListOfMoves)` function to obtain the valid moves. 
 
@@ -125,6 +122,8 @@ Computer moves are handled by the `choose_move(+Level, +GameState, +ValidMoves, 
   - In the second stage, it also considers the mobility of both the player and the opponent. The move must not leave the player with no valid moves in the next round, as that would result in a game over.
 
 The function then sorts the list of `MoveValues`, where each element is `Value-Move`, in descending order and selects the move with the highest value. If there are multiple moves with the highest value, it randomly selects one from those moves.
+
+![ComputerMove](img/computer_move.png)
 
 ### User Interaction
 Using the `validate_input(+Input, -Output)` function along with repeat-fail loops and `catch(read, _, handle_error)`, we prevent Prolog's error messages from being displayed in case of invalid symbol inputs. Additionally, for uppercase inputs (considered as variables), we ensure that the functions do not run with a variable but correctly with an atom or number.
