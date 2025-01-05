@@ -83,7 +83,7 @@ display_rules :-
     nl,
     write('--- Transition Stage ---'), nl, nl,
     write('1. When First Stage ends, the pressed pieces (both of the stack) are removed from the board'), nl,
-    write('2. If there is no pressed piece on board, both sides take 1 own piece out from the board'), nl,
+    write('2. If there is no pressed piece on board, both sides take 1 own piece out from the board, starting with '), write_colored_text(red, 'Red'), nl,
     write('Stage END:'), nl,
     write('     - When the pieces are removed the transition stage ends.'), nl,
     nl,
