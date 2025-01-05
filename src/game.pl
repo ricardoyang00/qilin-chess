@@ -55,6 +55,14 @@ handle_option(4) :-
     start_game_from_state(GameState),
     !.
 
+handle_option(5) :- 
+    nl,
+    display_commands,
+    write('Press ENTER to get back to the menu...'), nl,
+    wait_for_enter,
+    !,
+    fail.
+
 handle_option(0) :-
     nl,
     write('Exiting the game. Goodbye!'), nl,
