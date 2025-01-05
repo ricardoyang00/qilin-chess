@@ -53,7 +53,8 @@ handle_option(4) :-
     nl,
     load_game(GameState),
     start_game_from_state(GameState),
-    !.
+    !,
+    fail.
 
 handle_option(5) :- 
     nl,
