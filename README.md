@@ -4,11 +4,11 @@
   <img src="img/logo.svg" style="width: 50%; height: auto;">
 </p>
 
-[Qilin Chess](https://baike.baidu.com/item/%E9%BA%92%E9%BA%9F%E6%A3%8B/58965173) is based on the national intangible cultural heritage project **"Haifeng Qilin Dance"** in Shanwei City. The front view and side view of the Qilin are used to distinguish the `red` and `black` sides, so it is named "Qilin Chess". There are two ways to play Qilin chess, `"XiaSanZi"` and `"XingJiuGong"`.
+[Qilin Chess](https://baike.baidu.com/item/%E9%BA%92%E9%BA%9F%E6%A3%8B/58965173) (麒麟棋) is based on the national intangible cultural heritage project **"Haifeng Qilin Dance"** in Shanwei City. The front view and side view of the Qilin are used to distinguish the `red` and `black` sides. There are two ways to play Qilin chess, `"XiaSanZi"` (下三子) and `"XingJiuGong"` (行九宫).
 
-Qilin Chess' XiaSanZi is based on [ChengSan Chess](https://baike.baidu.com/item/%E6%88%90%E4%B8%89%E6%A3%8B/241145?fromModule=lemma_inlink) and XingJiuGong is based on [LiuZiChong Chess](https://baike.baidu.com/item/%E5%85%AD%E5%AD%90%E5%86%B2%E6%A3%8B/15738197?fromModule=lemma_inlink).
+Qilin Chess' XiaSanZi is based on [ChengSan Chess](https://baike.baidu.com/item/%E6%88%90%E4%B8%89%E6%A3%8B/241145?fromModule=lemma_inlink) is based on [LiuZiChong Chess](https://baike.baidu.com/item/%E5%85%AD%E5%AD%90%E5%86%B2%E6%A3%8B/15738197?fromModule=lemma_inlink).
 
-This project is an implementation of Qilin Chess' **XiaSanZi**.
+This project is an implementation of Qilin Chess' **XiaSanZi** (下三子) .
 
 ## T06_QilinChess_01
 - Bruno Huang (up202207517) - 50%
