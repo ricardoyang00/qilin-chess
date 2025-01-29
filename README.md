@@ -13,9 +13,9 @@ This project is an implementation of Qilin Chess' **XiaSanZi** (下三子) .
 ## Contents
 
 - [Installation and Execution](#installation-and-execution)
-- [Game Rules](#🎲-game-rules)
-- [Considerations for game extensions](#💡-considerations-for-game-extensions)
-- [Game Logic](#🧠-game-logic)
+- [Game Rules](#game-rules)
+- [Considerations for game extensions](#considerations-for-game-extensions)
+- [Game Logic](#game-logic)
   - [Game Configuration Representation](#game-configuration-representation)
   - [Internal Game State Representation](#internal-game-state-representation)
   - [Move Representation](#move-representation)
@@ -25,7 +25,7 @@ This project is an implementation of Qilin Chess' **XiaSanZi** (下三子) .
   - [Stage Transition](#stage-transition)
   - [Game Over](#game-over)
   - [Save and Load Game State](#save-and-load-game-state)
-- [Conclusions](#📝-conclusions)
+- [Conclusions](#conclusions)
 
 ## Installation and Execution
 
@@ -48,7 +48,7 @@ This project is an implementation of Qilin Chess' **XiaSanZi** (下三子) .
 3. Run `consult('path_to/src/game.pl').`
 4. To start the game run `play.`
 
-## 🎲 Game Rules
+## Game Rules
 - `2 players` (red and black).
 
     ![red](img/red.png) ![black](img/black.png)
@@ -72,7 +72,7 @@ This project is an implementation of Qilin Chess' **XiaSanZi** (下三子) .
     - When all `24 positions` are `filled` the first stage ends and the pressed pieces (both of the stack) are `removed` from the board.
     - If there is `no pressed piece` on board, both sides take `1 piece out` from the board.
 
-### 2. Transition Stage 🔄
+### 2. Transition Stage
 - When First Stage ends, the `pressed pieces` (both of the stack) are `removed` from the board.
 - If there is `no pressed piece` on board, both sides take `1 piece out` from the board, starting with `Red`.
 - **Stage end:**
@@ -85,10 +85,10 @@ This project is an implementation of Qilin Chess' **XiaSanZi** (下三子) .
 - **Stage end:**
     - The game ends when one player has `no pieces left` on the board.
 
-## 💡 Considerations for game extensions
+## Considerations for game extensions
 Since the game rules were not fully detailed, we added some rules that we believed were more logical based on the information available. Specifically, in the first stage, we allowed pressing more than once when forming 2 or 3 lines with a single move. In the second stage, we allowed players to move pieces from the lines they had formed.
 
-## 🧠 Game Logic
+## Game Logic
 
 ### Game Configuration Representation
 The game can be started in either `Human vs Human` or `Human vs Computer` mode. 
@@ -157,7 +157,7 @@ In addition to the `forfeit.` command, we allow the user to input the `save.` co
 
 Due to the way reward moves are processed, we do not allow the `forfeit.` or `save.` commands when input is being requested for reward moves or during the transition stage. These commands can be used in the first stage when placing a piece or in the second stage when moving a piece.
 
-## 📝 Conclusions
+## Conclusions
 
 ### Work Carried Out
 The development of Qilin Chess involved implementing the core game mechanics, including piece placement, movement, and line formation. We also added features to handle different game stages, validate moves, and manage game state transitions. The game supports both Human vs Human and Human vs Computer modes, with two difficulty levels for the computer player.
