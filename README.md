@@ -10,16 +10,26 @@ Qilin Chess' XiaSanZi is based on [ChengSan Chess](https://baike.baidu.com/item/
 
 This project is an implementation of Qilin Chess' **XiaSanZi** (下三子) .
 
-## T06_QilinChess_01
-- Bruno Huang (up202207517) - 50%
-- Ricardo Yang (up202208465) - 50%
+## Contents
 
-## Brief description of the tasks each one performed
-We collaborated on the entire game development process, continuously exchanging ideas and feedback to ensure a cohesive and well-rounded implementation.
+- [Installation and Execution](#installation-and-execution)
+- [Game Rules](#game-rules)
+- [Considerations for game extensions](#considerations-for-game-extensions)
+- [Game Logic](#game-logic)
+  - [Game Configuration Representation](#game-configuration-representation)
+  - [Internal Game State Representation](#internal-game-state-representation)
+  - [Move Representation](#move-representation)
+    - [Human Move](#human-move)
+    - [AI Move ⭐️](#computer-move)
+  - [User Interaction](#user-interaction)
+  - [Stage Transition](#stage-transition)
+  - [Game Over](#game-over)
+  - [Save and Load Game State](#save-and-load-game-state)
+- [Conclusions](#conclusions)
 
 ## Installation and Execution
 
-### Pre-Requesites
+### Requirements
 - Have [SICStus Prolog](https://sicstus.sics.se/) installed.
 - The game was tested with **SICStus Prolog VC16 4.9.0**.
 
@@ -33,10 +43,10 @@ We collaborated on the entire game development process, continuously exchanging 
 - Ensure it has [ANSI Support](https://help.eclipse.org/latest/index.jsp?topic=%2Forg.eclipse.jdt.doc.user%2Freference%2Fpreferences%2Frun-debug%2Fref-console_ansi.htm) is enabled, as the game includes some simple color features. If ANSI support is not enabled, the console may display some unusual characters instead of rendering colors correctly.
 
 ### Execution
-1. Run SICStus Prolog console.
-2. Navigate to `/src` folder.
-3. Run `consult('path_to/src/game.pl').`.
-4. To start the game run `play.`, it will display the game menu.
+1. Run SICStus Prolog console
+2. Navigate to `/src` folder
+3. Run `consult('path_to/src/game.pl').`
+4. To start the game run `play.`
 
 ## Game Rules
 - `2 players` (red and black).
@@ -53,7 +63,7 @@ We collaborated on the entire game development process, continuously exchanging 
 - Each side has `18 chess pieces`.
 - Game is divided into **`2 main stages`**, the `play stage` and the `move stage`, and **1 secondary stage**, the `transition stage`.
 
-### First Stage (Play Stage)
+### 1. First Stage (Play Stage)
 - `Red Starts`.
 - Each player has 18 chess pieces and `takes turns` placing them at the **intersection of the line segments**.
 - If one side has `3 chess pieces` arranged in a `straight line` (`vertical`, `horizontal` or `diagonal`) it can **`Press Down`** any chess piece of the other side. By pressing down means stacking a piece on top of any of the adversary's chess piece on board.
@@ -62,13 +72,13 @@ We collaborated on the entire game development process, continuously exchanging 
     - When all `24 positions` are `filled` the first stage ends and the pressed pieces (both of the stack) are `removed` from the board.
     - If there is `no pressed piece` on board, both sides take `1 piece out` from the board.
 
-### Transition Stage
+### 2. Transition Stage
 - When First Stage ends, the `pressed pieces` (both of the stack) are `removed` from the board.
 - If there is `no pressed piece` on board, both sides take `1 piece out` from the board, starting with `Red`.
 - **Stage end:**
     - When the pieces are removed the transition stage ends.
 
-### Second Stage (Move Stage)
+### 3. Second Stage (Move Stage)
 - `Black Starts`.
 - Both sides take turns to `move` the chess pieces to the `empty postitions` on the chessboard.
 - By aligning `3` of its pieces in a `straight line`, a player can `remove` 1 opposing piece from the board.
@@ -174,20 +184,6 @@ When tackling the I/O-related functions, we observed that uppercase inputs would
 
 Overall, the project successfully implements the core mechanics of Qilin Chess and provides a solid foundation for future enhancements. With further development, the game can be made more robust, user-friendly, and engaging for a wider audience.
 
-### Bibliography
-- [Qilin Chess](https://baike.baidu.com/item/%E9%BA%92%E9%BA%9F%E6%A3%8B/58965173)
-- ChatGPT Queries (Most relevant ones):
-    - How can I make the pieces display on board dynamically?
-    - How can I transitate from the first stage to the second stage of the game?
-    - How can I separate a move like a1a4 to a1 and a4 to check positions separately?
-    - Refactor this code without using if-else-then conditions nor -> ; operators
-    - How to check for lines formed after a move?
-    - Based on player types and current player, how to check if current player is computer or human?
-    - What are the functions that I can use to save and load a game state?
-    - How to show a custom error message instead of prolog error message in case of invalid inputs?
-    - How does this cut and fail here makes the loop work correctly?
-    - This error is shown after I input like ASD. how to handle this?
-    - Help me implement a Press ENTER to continue feature
-    - How can I write the value function value(+GameState, +Player, -Value) so it considers forming a line as the priority, then at the same time it should prevent opponent from forming line
-    - Without changing the logic, help me improve the readability of the code
-    - Why does this happen?
+
+## Acknowledgement
+This project was developed for the [Functional and Logic Programming (PFL)](https://sigarra.up.pt/feup/en/ucurr_geral.ficha_uc_view?pv_ocorrencia_id=541889) unit course at FEUP during the 2024/2025 academic year.
